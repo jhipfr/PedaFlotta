@@ -126,7 +126,7 @@ function dessiner() {
   ctx.setTransform(k, 0, 0, k, 0, 0);
   boutons = [];
   const portrait = LW < 800;
-  const jaugeW = portrait ? 50 : 70, colG = jaugeW + (portrait ? 120 : 220); // jauge tout à gauche, puis mes boutons
+  const jaugeW = portrait ? 50 : 70; // jauge de vitesse tout à gauche
   const BH = portrait ? 170 : 200; // hauteur du bandeau de profil
   // eau : plus claire près de la surface
   const t = clamp(moi.Profondeur / 25, 0, 1);
@@ -137,37 +137,35 @@ function dessiner() {
   for (const p of particules) { ctx.beginPath(); ctx.arc(p.x * LW, p.y, p.r, 0, 2 * Math.PI); ctx.fill(); }
 
   // le plongeur face à nous
-  const zone = LW - colG - 10;
-  const R = Math.min(220, zone * 0.4); // plongeur proche (2x la taille du premier prototype)
-  const cx = colG + zone / 2;
+  const zone = LW - jaugeW - 20;
+  const R = Math.min(220, zone * (portrait ? 0.3 : 0.4)); // plongeur proche
+  const cx = jaugeW + 10 + zone / 2;
   const e = clamp(ecartAff / ECART_MAX, -1, 1);   // -1 : lui plus léger ; +1 : lui plus lourd
   // Centre de la tête (hy) : yeux à hy - 0,08R, menton à hy + 0,9R, front à hy - 0,66R.
   // Équilibre : yeux au milieu de l'écran entier. -3 kg : menton sous le bandeau. +3 kg : front en bas de l'écran.
   const yHaut = BH - 0.9 * R, yMilieu = LH / 2 + 0.08 * R, yBas = LH + 0.66 * R;
   const hy = e < 0 ? yMilieu + (yMilieu - yHaut) * e : yMilieu + (yBas - yMilieu) * e;
-  ctx.save(); ctx.beginPath(); ctx.rect(0, BH, LW, LH - BH); ctx.clip();
-  dessinerBinome(cx, hy, R, colG);
-  ctx.restore();
+  dessinerBinome(cx, hy, R, jaugeW + 100); // visible aussi à travers le bandeau, dessiné par-dessus en transparence
 
   // ses commandes, attachées à son équipement (gardées à l'écran pour rester utilisables)
   const bw = portrait ? 130 : 190, bh = portrait ? 70 : 80;
   // boutons à côté du corps, reliés par un trait à la tirette et à l'inflateur
-  const ord = portrait ? { w: 210, h: 150 } : { w: 300, h: 200 }; // ordinateur de plongée, en haut à droite
-  ord.x = LW - ord.w - 8; ord.y = BH + 8;
-  const bx1 = clamp(cx - 1.9 * R - bw, colG + 5, LW - bw - 5);
-  const bx2 = clamp(cx + 1.9 * R, colG + 5, LW - bw - 5);
-  const by1 = clamp(hy + 1.6 * R - bh / 2, BH + 90, LH - 2 * bh - 20), by2 = clamp(hy + 2.5 * R - bh / 2, ord.y + ord.h + 10, LH - bh - 10);
+  const ord = portrait ? { w: 210, h: 150 } : { w: 300, h: 200 }; // ordinateur de plongée, en haut à gauche
+  ord.x = jaugeW + 8; ord.y = BH + 8;
+  const mh = portrait ? 100 : 120, mw = portrait ? 140 : 220; // mes boutons, en bas
+  const yMin = BH + (portrait ? 170 : 220), yMax = LH - mh - bh - 30; // entre l'ordinateur / Paramètres et mes boutons
+  const bx1 = clamp(cx - 1.9 * R - bw, jaugeW + 5, LW - bw - 5);
+  const bx2 = clamp(cx + 1.75 * R, jaugeW + 5, LW - bw - 5);
+  const by1 = clamp(hy + 1.6 * R - bh / 2, yMin, yMax), by2 = clamp(hy + 0.25 * R - bh / 2, yMin, yMax);
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
   ctx.beginPath(); ctx.moveTo(bx1 + bw, by1 + bh / 2); ctx.lineTo(cx - 1.25 * R, hy + 1.6 * R);
-  ctx.moveTo(bx2, by2 + bh / 2); ctx.lineTo(cx + 1.3 * R, hy + 2.5 * R); ctx.stroke(); ctx.setLineDash([]);
+  ctx.moveTo(bx2, by2 + bh / 2); ctx.lineTo(cx + 1.45 * R, hy + 0.25 * R); ctx.stroke(); ctx.setLineDash([]);
   bouton("saPurge", "Sa purge", bx1, by1, bw, bh, "#E070E0", lui, "IsPurge");
   bouton("sonInfl", "Son inflateur", bx2, by2, bw, bh, "#FFC0CB", lui, "IsInflateur");
 
-  // mes commandes à gauche
-  const mh = portrait ? 120 : 150;
-  const mw = colG - jaugeW - 20, ym = (BH + LH) / 2 + 40;
-  bouton("monInfl", "Mon inflateur", jaugeW + 10, ym - mh - 10, mw, mh, "#FFC0CB", moi, "IsInflateur");
-  bouton("maPurge", "Ma purge", jaugeW + 10, ym + 10, mw, mh, "#E070E0", moi, "IsPurge");
+  // mes commandes : inflateur en bas à gauche, purge en bas à droite
+  bouton("monInfl", "Mon inflateur", jaugeW + 10, LH - mh - 10, mw, mh, "#FFC0CB", moi, "IsInflateur");
+  bouton("maPurge", "Ma purge", LW - mw - 10, LH - mh - 10, mw, mh, "#E070E0", moi, "IsPurge");
 
   // jauge de vitesse tout à gauche (couleurs et échelle ±30 m/min du niveau 1)
   {
@@ -184,10 +182,11 @@ function dessiner() {
   const tt = Math.max(0, moi.time);
   const ts = tt < 60 ? Math.trunc(tt) + "s" : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
   dessinerOrdinateur(ord.x, ord.y, ord.w, ord.h, ts);
-  if (etat !== "plongee") bouton("param", "Paramètres", jaugeW + 10, BH + 10, colG - jaugeW - 20, 64, "#DDDDDD");
-  ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "left"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
-  ctx.fillText("← Niveau 1", jaugeW + 12, BH + 90);
-  boutons.push({ id: "niveau1", x: jaugeW, y: BH + 80, w: 160, h: 50 });
+  const pw = portrait ? 150 : 210; // Paramètres et retour au niveau 1, en haut à droite
+  if (etat !== "plongee") bouton("param", "Paramètres", LW - pw - 10, BH + 10, pw, 64, "#DDDDDD");
+  ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
+  ctx.fillText("← Niveau 1", LW - 12, BH + 90);
+  boutons.push({ id: "niveau1", x: LW - 170, y: BH + 80, w: 170, h: 50 });
   dessinerProfil(BH, portrait);
   if (etat === "plongee" && moi.time < DECOMPTE) { // décompte
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(cx, LH / 2, 110, 0, 2 * Math.PI); ctx.fill();
@@ -219,7 +218,9 @@ function dessinerOrdinateur(x, y, w, h, ts) {
   ctx.fillText(fr(moi.Profondeur, 1), sx + 6 * u, sy + 17 * u);
   const dw = ctx.measureText(fr(moi.Profondeur, 1)).width;
   ctx.font = `bold ${14 * u}px ${FONT}`; ctx.fillText("m", sx + 8 * u + dw, sy + 38 * u);
-  const v = vAff, col = v > 15 ? "#ff3030" : v > 9.6 ? "#ffa500" : v > 4.8 ? "#ffff00" : v > -0.5 ? "#30e030" : "#ffffff";
+  // alarme du profil : 10 m/min au-delà de 10 m, 5 m/min de 10 m à la surface
+  const v = vAff, limite = moi.Profondeur > 10 ? 10 : 5;
+  const col = v >= limite ? "#ff3030" : v > -0.5 ? "#30e030" : "#ffffff";
   ctx.textAlign = "right"; ctx.fillStyle = col; ctx.font = `bold ${26 * u}px ${FONT}`;
   ctx.fillText((v >= 0.5 ? "▲" : v <= -0.5 ? "▼" : "") + Math.abs(v).toFixed(0), sx + sw - 6 * u, sy + 20 * u);
   ctx.font = `bold ${11 * u}px ${FONT}`; ctx.fillText("m/min", sx + sw - 6 * u, sy + 52 * u);
@@ -231,7 +232,7 @@ function dessinerOrdinateur(x, y, w, h, ts) {
 
 // bandeau du haut : profil de remontée cible (rouge) et trajectoire réelle (blanc)
 function dessinerProfil(BH, portrait) {
-  ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0, 0, LW, BH);
+  ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, LW, BH); // transparent : on voit le plongeur dessous
   ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = `bold ${portrait ? 18 : 22}px ${FONT}`;
   ctx.fillText(portrait ? "10 m/min → 10 m, 5 m/min, palier 30 s à 3 m" : "Profil : 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m", 10, 6);
   const x0 = portrait ? 50 : 60, x1 = LW - 20, y0 = portrait ? 36 : 42, y1 = BH - 26;
@@ -273,7 +274,7 @@ function bandeau(lignes, cx, yc) {
   lignes.forEach((l, i) => ctx.fillText(l, x + w / 2, yc - h / 2 + 20 + lh * (i + 0.5)));
 }
 
-// Plongeur vu de face, tête centrée en (cx, hy), rayon de tête R. colG : bord droit de ma colonne de boutons.
+// Plongeur vu de face, tête centrée en (cx, hy), rayon de tête R. colG : départ de mon bras en bas de l'écran.
 function dessinerBinome(cx, hy, R, colG) {
   const NOIR = "#16181d", NEO = "#262a33", STAB = "#1f8f96", STAB2 = "#156a70", PEAU = "#f2c9a0";
   // bloc derrière les épaules
@@ -282,7 +283,6 @@ function dessinerBinome(cx, hy, R, colG) {
   // bras (combinaison)
   ctx.strokeStyle = NEO; ctx.lineCap = "round"; ctx.lineWidth = 0.6 * R;
   ctx.beginPath(); ctx.moveTo(cx - 1.4 * R, hy + 1.3 * R); ctx.lineTo(cx - 1.9 * R, hy + 2.8 * R); ctx.lineTo(cx - 1.7 * R, hy + 4.0 * R); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx + 1.4 * R, hy + 1.3 * R); ctx.lineTo(cx + 1.9 * R, hy + 2.8 * R); ctx.lineTo(cx + 1.7 * R, hy + 4.0 * R); ctx.stroke();
   // torse
   ctx.fillStyle = NEO; ctx.beginPath();
   ctx.moveTo(cx - 1.6 * R, hy + 1.0 * R); ctx.lineTo(cx + 1.6 * R, hy + 1.0 * R);
@@ -303,17 +303,6 @@ function dessinerBinome(cx, hy, R, colG) {
   ctx.strokeStyle = "#b00"; ctx.lineWidth = 0.06 * R;
   ctx.beginPath(); ctx.moveTo(cx - 1.2 * R, hy + 1.1 * R); ctx.lineTo(cx - 1.25 * R, hy + 1.55 * R); ctx.stroke();
   ctx.fillStyle = "#e00"; ctx.beginPath(); ctx.arc(cx - 1.25 * R, hy + 1.6 * R, 0.1 * R, 0, 2 * Math.PI); ctx.fill();
-  // direct system : annelé de l'épaule gauche (à droite de l'écran) jusqu'à la poitrine
-  ctx.strokeStyle = "#2a2a2a"; ctx.lineWidth = 0.22 * R; ctx.lineCap = "butt";
-  ctx.beginPath(); ctx.moveTo(cx + 0.9 * R, hy + 0.9 * R);
-  ctx.quadraticCurveTo(cx + 1.6 * R, hy + 1.6 * R, cx + 1.3 * R, hy + 2.3 * R); ctx.stroke();
-  ctx.strokeStyle = "#555"; ctx.lineWidth = 0.03 * R;
-  for (let i = 1; i < 9; i++) { // anneaux
-    const u = i / 9, px = (1 - u) * (1 - u) * 0.9 + 2 * u * (1 - u) * 1.6 + u * u * 1.3, py = (1 - u) * (1 - u) * 0.9 + 2 * u * (1 - u) * 1.6 + u * u * 2.3;
-    ctx.beginPath(); ctx.moveTo(cx + (px - 0.11) * R, hy + py * R); ctx.lineTo(cx + (px + 0.11) * R, hy + py * R); ctx.stroke();
-  }
-  ctx.fillStyle = "#3b3b3b"; rrect(cx + 1.12 * R, hy + 2.25 * R, 0.36 * R, 0.55 * R, 0.08 * R); ctx.fill();
-  ctx.fillStyle = "#f5c400"; ctx.beginPath(); ctx.arc(cx + 1.3 * R, hy + 2.42 * R, 0.09 * R, 0, 2 * Math.PI); ctx.fill();
   // tête : cagoule, visage, masque, détendeur
   ctx.fillStyle = NOIR; ctx.beginPath(); ctx.arc(cx, hy, R, 0, 2 * Math.PI); ctx.fill();
   ctx.fillStyle = PEAU; ctx.beginPath(); ctx.ellipse(cx, hy + 0.12 * R, 0.68 * R, 0.78 * R, 0, 0, 2 * Math.PI); ctx.fill();
@@ -327,6 +316,15 @@ function dessinerBinome(cx, hy, R, colG) {
   ctx.beginPath(); ctx.moveTo(cx - 0.25 * R, hy + 0.6 * R); ctx.quadraticCurveTo(cx - 0.9 * R, hy + 0.9 * R, cx - 0.6 * R, hy + 1.3 * R); ctx.stroke();
   ctx.fillStyle = "#4a4a4a"; ctx.beginPath(); ctx.arc(cx, hy + 0.58 * R, 0.24 * R, 0, 2 * Math.PI); ctx.fill();
   ctx.fillStyle = "#777"; ctx.beginPath(); ctx.arc(cx, hy + 0.58 * R, 0.12 * R, 0, 2 * Math.PI); ctx.fill();
+  // son bras gauche levé (à droite de l'écran) : il tient l'inflateur au niveau du visage
+  const H = { x: cx + 1.45 * R, y: hy + 0.25 * R };
+  ctx.strokeStyle = NEO; ctx.lineCap = "round"; ctx.lineWidth = 0.55 * R;
+  ctx.beginPath(); ctx.moveTo(cx + 1.35 * R, hy + 1.3 * R); ctx.lineTo(cx + 2.0 * R, hy + 1.7 * R); ctx.lineTo(H.x + 0.1 * R, H.y + 0.45 * R); ctx.stroke();
+  ctx.strokeStyle = "#2a2a2a"; ctx.lineWidth = 0.2 * R; ctx.lineCap = "butt"; // annelé de l'épaule à la main
+  ctx.beginPath(); ctx.moveTo(cx + 0.9 * R, hy + 0.95 * R); ctx.quadraticCurveTo(cx + 1.15 * R, hy + 1.0 * R, H.x, H.y + 0.3 * R); ctx.stroke();
+  ctx.fillStyle = "#3b3b3b"; rrect(H.x - 0.17 * R, H.y - 0.32 * R, 0.34 * R, 0.62 * R, 0.08 * R); ctx.fill(); // inflateur
+  ctx.fillStyle = "#f5c400"; ctx.beginPath(); ctx.arc(H.x, H.y - 0.18 * R, 0.09 * R, 0, 2 * Math.PI); ctx.fill();
+  ctx.fillStyle = "#3a3f47"; ctx.beginPath(); ctx.ellipse(H.x + 0.05 * R, H.y + 0.12 * R, 0.3 * R, 0.22 * R, 0.3, 0, 2 * Math.PI); ctx.fill(); // gant
   // bulles d'expiration
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 2;
   for (const b of bulles) { ctx.beginPath(); ctx.arc(cx + b.x * R, hy + b.y * R, b.r * R, 0, 2 * Math.PI); ctx.stroke(); }

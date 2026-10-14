@@ -64,7 +64,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 
 Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : `https://<compte>.github.io/PedaFlotta/niveau2.html`.
 
-- Vue subjective : on tient de la main gauche un plongeur face à nous. Boutons « Sa purge » et « Son inflateur » sur son équipement, « Mon inflateur » et « Ma purge » à gauche, jauge de vitesse tout à gauche (mêmes couleurs que le niveau 1). Profondeur, vitesse et durée dans un ordinateur de plongée dessiné en haut à droite (boîtier gris, écran noir, vitesse colorée selon la zone de la jauge).
+- Vue subjective : on tient de la main gauche un plongeur face à nous. Il tient son inflateur en main au niveau du visage (bouton « Son inflateur »), « Sa purge » est sur son épaule droite. « Mon inflateur » en bas à gauche, « Ma purge » en bas à droite, jauge de vitesse tout à gauche (mêmes couleurs que le niveau 1). Profondeur, vitesse et durée dans un ordinateur de plongée dessiné en haut à gauche (boîtier gris, écran noir). Alarme de vitesse du profil : vitesse en rouge si ≥ 10 m/min au-delà de 10 m, ≥ 5 m/min de 10 m à la surface. Le bandeau du profil est transparent : le plongeur reste visible dessous.
 - Deux instances de `model.js`, accrochées : même profondeur et même vitesse. Le mouvement vient de la somme des deux masses apparentes, sur la somme des deux masses, avec des frottements doublés (deux surfaces face à l'eau).
 - Paramètres : profondeur de départ (20 m par défaut), masse, volume et lest de chacun des deux plongeurs.
 - Au départ, les deux plongeurs sont équilibrés à la profondeur choisie (gilets gonflés juste ce qu'il faut). Le bouton **Go** lance la remontée.
