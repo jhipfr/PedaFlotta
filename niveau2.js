@@ -155,7 +155,7 @@ function dessiner() {
   ctx.setTransform(k, 0, 0, k, 0, 0);
   boutons = [];
   const portrait = LW < 800;
-  const jaugeW = portrait ? 50 : 70; // jauge de vitesse tout à gauche
+  const jaugeW = 0; // plus de jauge de vitesse à gauche : la vitesse est dans l'ordinateur
   const BH = portrait ? 170 : 200; // hauteur du bandeau de profil
   // eau : plus claire près de la surface
   const t = clamp(moi.Profondeur / 25, 0, 1);
@@ -211,17 +211,6 @@ function dessiner() {
     ctx.fillStyle = "#fff"; ctx.textBaseline = "bottom"; ctx.font = `bold ${portrait ? 14 : 18}px ${FONT}`;
     ctx.fillText("Poumon", sx + curW / 2, sy - 4);
     boutons.push({ id: "poumon", x: sx - 10, y: sy, w: curW + 20, h: sh, sy: sy + th / 2, sh: sh - th });
-  }
-
-  // jauge de vitesse tout à gauche (couleurs et échelle ±30 m/min du niveau 1)
-  {
-    const gx = 0, gy = BH + 10, gh = LH - BH - 20;
-    const gg = ctx.createLinearGradient(0, gy, 0, gy + gh);
-    for (const [o, c] of [[0, "#FF0000"], [0.25, "#FF0000"], [0.25, "#FFA500"], [0.339, "#FFA500"], [0.34, "#FFFF00"], [0.419, "#FFFF00"],
-      [0.42, "#008000"], [0.5, "#008000"], [0.5, "#90EE90"], [1, "#90EE90"]]) gg.addColorStop(o, c);
-    ctx.fillStyle = gg; ctx.fillRect(gx, gy, jaugeW, gh);
-    const v = clamp(vAff, -30, 30);
-    ctx.fillStyle = "#000"; ctx.fillRect(gx, gy + gh / 2 - gh * v / 60 - 5, jaugeW, 10);
   }
 
   // informations en haut
