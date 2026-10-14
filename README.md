@@ -96,7 +96,7 @@ Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode insta
 
 - `niveau3.html`, même code que le niveau 2. Départ à 40 m (réglable jusqu'à 45 m, le fond), profil : 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, puis comme le niveau 2 (5 m/min, palier de 30 s à 3 m). Arrivée en surface prévue à 305 s.
 - Alarme de vitesse : 20 m/min au-delà de 30 m, 10 m/min de 30 à 10 m, 5 m/min ensuite. Bandeau de 6 min ; game over si pas en surface à 6 min (valeur choisie : le profil seul dure 5 min 05).
-- Choix du niveau (1 à 4, le niveau en cours en jaune) sous Paramètres, aux niveaux 2, 3 et 4.
+- Pas de sélecteur de niveau : chaque niveau s'ouvre par son lien (`index.html`, `niveau2.html`, `niveau3.html`, `niveau4.html`).
 - `model.js` : le fond (sable) est réglable (`ProfondeurFond`, 25 m par défaut).
 
 ## Niveau 4 : remontée assistée depuis 40 m, gonflages pénalisés

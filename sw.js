@@ -1,7 +1,7 @@
 // Service worker : met l'application en cache pour l'utilisation hors ligne.
 // Stratégie « réseau d'abord » : en ligne, on prend toujours la dernière version publiée (et on met le cache à jour) ;
 // hors ligne, on sert la copie en cache. Changer CACHE à chaque publication reste conseillé.
-const CACHE = "pedaflotta-web-30";
+const CACHE = "pedaflotta-web-31";
 const FILES = [
   "./", "index.html", "style.css", "model.js", "portrait.js", "app.js", "niveau2.html", "niveau3.html", "niveau4.html", "niveau2.js", "manifest.webmanifest",
   "img/plongeur.png", "son/inflateur.mp3", "img/diver_body.png", "img/diver_up.png", "img/diver_down.png", "img/Souris.png", "img/sable.png", "img/ciel.png", "icons/icon-192.png", "icons/icon-512.png",

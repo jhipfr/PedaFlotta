@@ -228,22 +228,12 @@ function dessiner() {
   const tt = Math.max(0, moi.time);
   const ts = tt < 60 ? Math.trunc(tt) + "s" : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
   dessinerOrdinateur(ord.x, ord.y, ord.w, ord.h, ts);
-  // score en haut à droite, Paramètres et retour au niveau 1 dessous
+  // score en haut à droite, Paramètres dessous
   ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right";
   ctx.font = `bold ${portrait ? 22 : 26}px ${FONT}`; ctx.fillText("Score", LW - 12, BH + 8);
   ctx.font = `bold ${portrait ? 44 : 56}px ${FONT}`; ctx.fillText(score.toFixed(0), LW - 12, BH + 34);
   const pw = portrait ? 150 : 210, py = BH + (portrait ? 90 : 100);
   if (etat !== "plongee") bouton("param", "Paramètres", LW - pw - 10, py, pw, 60, "#DDDDDD");
-  ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
-  // choix du niveau : 1 à 4, le niveau en cours en jaune
-  ctx.fillText("Niveau", LW - 12, py + 68);
-  const nb = portrait ? 34 : 40, ng = 6;
-  for (let n = 1; n <= 4; n++) {
-    const x = LW - 12 - (5 - n) * nb - (4 - n) * ng, y = py + (portrait ? 94 : 98);
-    ctx.fillStyle = n === NIV ? "#FFD700" : "rgba(255,255,255,0.85)"; ctx.fillRect(x, y, nb, nb);
-    ctx.fillStyle = "#000"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(n), x + nb / 2, y + nb / 2 + 1);
-    boutons.push({ id: "niveau", n, x, y, w: nb, h: nb });
-  }
   dessinerProfil(BH, portrait);
   if (etat === "plongee" && moi.time < DECOMPTE) { // décompte
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(cx, LH / 2, 110, 0, 2 * Math.PI); ctx.fill();
@@ -433,7 +423,6 @@ cv.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   initSon(); // le navigateur n'autorise le son qu'après un geste de l'utilisateur
   const b = cible(aPos(e));
-  if (b && b.id === "niveau") { if (b.n !== NIV) location.href = b.n === 1 ? "index.html" : "niveau" + b.n + ".html"; return; }
   if (!b) return;
   if (b.id === "poumon") { curseurs.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); reglerPoumon(b, aPos(e).y); return; }
   if (b.id === "param") { ouvrirParams(); return; }
