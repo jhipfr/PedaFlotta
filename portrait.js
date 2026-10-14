@@ -153,7 +153,8 @@ function drawPortrait() {
     ctx.restore();
     ctx.save(); ctx.globalAlpha = 0.8;
     ptext("Poumon " + fr(model.VolumePoumonInstant, 2) + "L", x + 10, yl + h - 52, COL.Black, 32);
-    ptext("Gilet " + fr(model.VolumeFlottaisonDuGilet, 2) + "L", x + 10, yg + h - 52, COL.White, 32);
+    ptext("Gilet " + fr(model.VolumeFlottaisonDuGilet, 2) + "L", x + 10, yg + h - 92, COL.White, 32);
+    ptext("avec " + fr(model.VolumeNormoLitresGilet, 2) + " NL", x + 10, yg + h - 52, COL.White, 32);
     ptext("Combinaison " + fr(model.FlottaCombi, 2) + "L", x + 10, yc + h - 52, COL.Black, 32);
     ctx.restore();
   }
