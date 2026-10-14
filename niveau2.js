@@ -5,8 +5,11 @@
 // verticalement : 2 kg plus léger, son front sort par le haut ; 2 kg plus lourd, on ne voit que le haut de sa tête.
 "use strict";
 
+// Niveau 3 : même jeu depuis 40 m (niveau3.html définit NIVEAU = 3 avant de charger ce fichier).
+const NIV = typeof NIVEAU !== "undefined" ? NIVEAU : 2;
 const STEP = 0.01;           // pas de calcul (s), comme le niveau 1
-let DEPART = 20;             // profondeur de départ (m), réglable dans Paramètres
+let DEPART = NIV === 3 ? 40 : 20; // profondeur de départ (m), réglable dans Paramètres
+const FOND = NIV === 3 ? 45 : 25; // m : profondeur maximale (fond) et maximum du paramètre
 const ECART_MAX = 5;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
 const LISSAGE = 0.5;         // s : constante de temps de l'affichage de l'écart
 const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
@@ -22,8 +25,8 @@ let tHorsVert = 0;           // temps passé au-dessus de la zone verte (s)
 // Score : -1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite),
 // -10 points par gonflage à partir du deuxième, +100 points à la surface à l'heure du profil, moins 2 points par seconde de retard.
 let score = 0, bonusSurface = 0, gameOver = false;
-const DUREE_MAX = 240;       // s : largeur du bandeau ; game over si pas en surface à 4 min
-const vitesseLimite = (d) => (d > 10 ? 10 : 5);
+const DUREE_MAX = NIV === 3 ? 360 : 240; // s : largeur du bandeau ; game over si pas en surface à 4 min (6 min au niveau 3)
+const vitesseLimite = (d) => (d > 30 ? 20 : d > 10 ? 10 : 5);
 let particules = [], bulles = [];
 let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de demi-vie 1 s
 const DEMI_VIE_V = 1;        // s
@@ -32,12 +35,13 @@ let profil = [];             // profil de remontée cible {t, d}
 let tSurfaceProfil = 0;      // date d'arrivée en surface prévue par le profil (s)
 const DECOMPTE = 5;          // s de décompte au départ
 
-// Profil cible : décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite,
+// Profil cible : décompte à la profondeur de départ, 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, 5 m/min ensuite,
 // palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface, où il reste jusqu'à la fin du bandeau (4 min).
 function construireProfil(D) {
   const pts = [{ t: 0, d: D }, { t: DECOMPTE, d: D }];
   let t = DECOMPTE, d = D;
   const vers = (cible, vMin) => { if (d > cible) { t += (d - cible) / vMin * 60; d = cible; pts.push({ t, d }); } };
+  vers(30, 20);
   vers(10, 10);
   vers(3, 5);
   if (D >= 3) { t += 30; pts.push({ t, d }); }
@@ -50,7 +54,7 @@ function construireProfil(D) {
 // Équilibre les deux plongeurs à DEPART mètres : gilet gonflé juste ce qu'il faut.
 function preparer(m) {
   m.initModel();
-  m.time = 0;
+  m.time = 0; m.ProfondeurFond = FOND;
   m.Z = -DEPART; m.ZP = 0; m.Profondeur = DEPART; m.PressionAbsolue = 1 + DEPART / 10;
   m.VolumeNormoLitresGilet = 0;
   m.compute(0);              // masse apparente gilet vide, à la profondeur de départ
@@ -77,7 +81,7 @@ function pas(dt) {
   const zpp = (-ma + r) * moi.Gravitation / masse;
   let zp = zp0 + zpp * dt, z = z0 + zp * dt;
   if (z > 0) { z = 0; zp = 0; }
-  if (z < -25) { z = -25; zp = 0; }
+  if (z < -FOND) { z = -FOND; zp = 0; }
   for (const m of [moi, lui]) {
     m.ZPP = zpp; m.ZP = zp; m.Z = z;
     m.Vitesse = zp * 60; m.Profondeur = -z; m.PressionAbsolue = 1 + m.Profondeur / 10;
@@ -188,7 +192,7 @@ function dessiner() {
 
   // curseur « poumon ballast » à droite : mon volume pulmonaire moyen (comme le niveau 1)
   {
-    const sx = LW - curW - 4, sy = BH + (portrait ? 200 : 220), sh = LH - mh - 30 - sy;
+    const sx = LW - curW - 4, sy = BH + (portrait ? 240 : 260), sh = LH - mh - 30 - sy;
     const gt = ctx.createLinearGradient(sx, 0, sx + curW, 0);
     gt.addColorStop(0, "#888"); gt.addColorStop(0.5, "#ccc"); gt.addColorStop(1, "#888");
     ctx.fillStyle = gt; ctx.strokeStyle = "#333"; ctx.lineWidth = 2; rrect(sx, sy, curW, sh, 8); ctx.fill(); ctx.stroke();
@@ -226,6 +230,8 @@ function dessiner() {
   ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
   ctx.fillText("← Niveau 1", LW - 12, py + 72);
   boutons.push({ id: "niveau1", x: LW - 170, y: py + 62, w: 170, h: 46 });
+  ctx.fillText(NIV === 3 ? "← Niveau 2" : "Niveau 3 →", LW - 12, py + 112);
+  boutons.push({ id: "autreNiveau", x: LW - 170, y: py + 104, w: 170, h: 46 });
   dessinerProfil(BH, portrait);
   if (etat === "plongee" && moi.time < DECOMPTE) { // décompte
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(cx, LH / 2, 110, 0, 2 * Math.PI); ctx.fill();
@@ -235,7 +241,7 @@ function dessiner() {
 
   const ymid = (BH + LH) / 2;
   if (etat === "attente") { bandeau(portrait ? ["Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, ymid - (portrait ? 110 : 90)); boutonGo(cx, ymid); }
-  if (etat === "fin" && gameOver) { bandeau(["GAME OVER", "Pas en surface à 4 min", "Score " + score.toFixed(0)], cx, ymid - 130); boutonGo(cx, ymid); }
+  if (etat === "fin" && gameOver) { bandeau(["GAME OVER", "Pas en surface à " + DUREE_MAX / 60 + " min", "Score " + score.toFixed(0)], cx, ymid - 130); boutonGo(cx, ymid); }
   else if (etat === "fin") { bandeau(["Score " + score.toFixed(0), "Surface en " + ts + " (profil " + Math.round(tSurfaceProfil) + " s)",
     "Bonus surface +" + bonusSurface.toFixed(0), "Vitesse max " + vMax.toFixed(0) + " m/min"], cx, ymid - 150); boutonGo(cx, ymid); }
 }
@@ -274,13 +280,16 @@ function dessinerOrdinateur(x, y, w, h, ts) {
 function dessinerProfil(BH, portrait) {
   ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, LW, BH); // transparent : on voit le plongeur dessous
   ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = `bold ${portrait ? 18 : 22}px ${FONT}`;
-  ctx.fillText(portrait ? "10 m/min → 10 m, 5 m/min, palier 30 s à 3 m" : "Profil : 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m", 10, 6);
+  const titre = NIV === 3
+    ? (portrait ? "20 m/min → 30 m, 10 → 10 m, 5, palier 3 m" : "Profil : 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m")
+    : (portrait ? "10 m/min → 10 m, 5 m/min, palier 30 s à 3 m" : "Profil : 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m");
+  ctx.fillText(titre, 10, 6);
   const x0 = portrait ? 50 : 60, x1 = LW - 20, y0 = portrait ? 36 : 42, y1 = BH - 26;
   const tFin = DUREE_MAX, D = Math.max(DEPART, 1); // le bandeau couvre 4 minutes
   const X = (t) => x0 + (x1 - x0) * t / tFin, Y = (d) => y0 + (y1 - y0) * Math.min(d, D) / D; // plus profond que le départ : bord bas
   ctx.font = `${portrait ? 16 : 18}px ${FONT}`; ctx.textBaseline = "middle"; ctx.textAlign = "right";
   ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 1;
-  for (const d of [...new Set([0, 3, 10, DEPART])].filter((d) => d <= DEPART)) {
+  for (const d of [...new Set([0, ...(DEPART > 25 ? [] : [3]), 10, 30, DEPART])].filter((d) => d <= DEPART)) {
     ctx.beginPath(); ctx.moveTo(x0, Y(d)); ctx.lineTo(x1, Y(d)); ctx.stroke();
     ctx.fillStyle = "#ddd"; ctx.fillText(fr(d, 0) + "m", x0 - 6, Y(d));
   }
@@ -386,6 +395,7 @@ cv.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const b = cible(aPos(e));
   if (b && b.id === "niveau1") { location.href = "index.html"; return; }
+  if (b && b.id === "autreNiveau") { location.href = NIV === 3 ? "niveau2.html" : "niveau3.html"; return; }
   if (!b) return;
   if (b.id === "poumon") { curseurs.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); reglerPoumon(b, aPos(e).y); return; }
   if (b.id === "param") { ouvrirParams(); return; }
@@ -413,7 +423,7 @@ cv.addEventListener("wheel", (e) => { e.preventDefault(); moi.OffsetRespiration 
 
 // ---------- paramètres : profondeur de départ et caractéristiques de chaque plongeur ----------
 const PARAMS = [
-  ["Profondeur de départ (m)", () => DEPART, (v) => { DEPART = clamp(v, 1, 25); }],
+  ["Profondeur de départ (m)", () => DEPART, (v) => { DEPART = clamp(v, 1, FOND); }],
   ["Ma masse (kg)", () => moi.MassePlongeur, (v) => { moi.MassePlongeur = v; }],
   ["Mon volume (L)", () => moi.VolumePlongeur, (v) => { moi.VolumePlongeur = v; }],
   ["Mon lest (kg)", () => moi.LestPlongeur, (v) => { moi.LestPlongeur = v; }],

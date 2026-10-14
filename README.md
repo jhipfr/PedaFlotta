@@ -11,6 +11,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 | `app.js` | Affichage, souris/tactile, score, paramètres | `MainWindow.xaml(.cs)`, `App.xaml` |
 | `portrait.js` | Mode téléphone vertical | nouveau |
 | `niveau2.html`, `niveau2.js` | Niveau 2 : remontée assistée | nouveau |
+| `niveau3.html` | Niveau 3 : même jeu depuis 40 m (charge `niveau2.js` avec `NIVEAU = 3`) | nouveau |
 | `index.html`, `style.css` | Page et styles | `MainWindow.xaml`, `App.xaml` |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Mode hors ligne / installation | nouveau |
 | `img/plongeur.png`, `img/Souris.png` | Images | `Resources/` |
@@ -89,3 +90,10 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 Le service worker fonctionne en « réseau d'abord » : en ligne, la dernière version publiée est toujours chargée (et mise en cache) ; hors ligne, la copie en cache est servie. Modifier `CACHE` dans `sw.js` à chaque version reste conseillé pour purger les anciens fichiers.
 
 Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode installable demande en revanche http(s), par exemple `python -m http.server` dans ce dossier.
+
+## Niveau 3 : remontée assistée depuis 40 m
+
+- `niveau3.html`, même code que le niveau 2. Départ à 40 m (réglable jusqu'à 45 m, le fond), profil : 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, puis comme le niveau 2 (5 m/min, palier de 30 s à 3 m). Arrivée en surface prévue à 305 s.
+- Alarme de vitesse : 20 m/min au-delà de 30 m, 10 m/min de 30 à 10 m, 5 m/min ensuite. Bandeau de 6 min ; game over si pas en surface à 6 min (valeur choisie : le profil seul dure 5 min 05).
+- Liens « Niveau 3 → » sous « ← Niveau 1 » au niveau 2, « ← Niveau 2 » au niveau 3.
+- `model.js` : le fond (sable) est réglable (`ProfondeurFond`, 25 m par défaut).

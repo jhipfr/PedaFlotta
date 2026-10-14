@@ -50,6 +50,7 @@ class Model {
     this.Filtrage = 0.05;            // (coefficient du filtre de l'oscilloscope gilet)
     this.TempsPlongee = 360;         // s
     this.ProfondeurMax = 30;         // m
+    this.ProfondeurFond = 25;        // m : le sable (45 m au niveau 3)
     this.HauteurCiel = 5;            // m
     this.PeriodeEchantillonnage = 0.1; // s
     this.LargeurScope = 16;          // s
@@ -205,7 +206,7 @@ class Model {
     this.Z = this.ZP * DeltaT + this.Z;    // Intégration pour avoir l'altitude (ici négative)
 
     if (this.Z > 0) { this.Z = 0; this.ZP = 0; }       // on ne peut sortir de l'eau
-    if (this.Z < -25) { this.Z = -25; this.ZP = 0; }   // on ne peut rentrer dans le sable
+    if (this.Z < -this.ProfondeurFond) { this.Z = -this.ProfondeurFond; this.ZP = 0; }   // on ne peut rentrer dans le sable
     this.Vitesse = this.ZP * 60;      // m/min
     this.Profondeur = -this.Z;
     this.PressionAbsolue = 1 + this.Profondeur / 10; // pression ambiante pour l'écrasement du gilet et de la combinaison.
