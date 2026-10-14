@@ -189,10 +189,9 @@ class Model {
       if (cs[0].time < this.time - this.LargeurScope) cs.shift(); else break;
     }
 
-    // Seule la moitié du volume pulmonaire est comptée dans la poussée (demande de J. Honvault).
     // Inventaire des forces projetées sur un axe Z orienté vers le haut.
     this.MasseApparentePlongeur = (this.MassePlongeur + this.LestPlongeur + this.PoidsAirBloc)
-      - (this.FlottaCombi + this.VolumePoumonInstant / 2 + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
+      - (this.FlottaCombi + this.VolumePoumonInstant + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
     const absZP = Math.abs(this.ZP);
     this.ResistanceHydroDynamique = -Math.sign(this.ZP) * (absZP * (this.CoefficientFrottementVisqueux + absZP * this.CoefficientFrottement));
     // Principe fondamental de la dynamique. ici l'accélération (Z dérivée 2 fois)

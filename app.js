@@ -56,6 +56,18 @@ const $ = (id) => document.getElementById(id);
 const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
 const speedLayer = document.createElement("canvas"), sctx = speedLayer.getContext("2d");
 const imgDiver = new Image(); imgDiver.src = "img/plongeur.png"; imgDiver.onload = () => { dirty = true; };
+const imgSable = new Image(); imgSable.src = "img/sable.png"; imgSable.onload = () => { dirty = true; };
+const imgCiel = new Image(); imgCiel.src = "img/ciel.png"; imgCiel.onload = () => { dirty = true; };
+// Répète une image horizontalement sur [x0, x1], hauteur h, décalée de 'offset' (défilement).
+function tileH(img, x0, x1, y, h, offset) {
+  if (!img.complete || !img.naturalWidth) return false;
+  const tw = img.naturalWidth * h / img.naturalHeight;
+  let x = x0 - (((offset % tw) + tw) % tw);
+  ctx.save(); ctx.beginPath(); ctx.rect(x0, y, x1 - x0, h); ctx.clip();
+  for (; x < x1; x += tw) ctx.drawImage(img, x, y, tw + 1, h);
+  ctx.restore();
+  return true;
+}
 let PORTRAIT = false, ended = false, sliderH = SLIDER.h;
 let scale = 1, k = 1, dirty = true, SKY = 0, SH = H; // SKY : hauteur de ciel ajoutée, SH : hauteur totale
 
@@ -318,6 +330,7 @@ function draw() {
   // Fond principal
   ctx.fillStyle = vgrad(0, H, [[0, COL.Cyan], [0.5, COL.Cyan], [0.5, COL.Beige], [1, COL.Beige]]);
   ctx.fillRect(0, 0, W, H);
+  tileH(imgCiel, 0, W, -SKY, SKY + R, 0); // ciel nuageux (bande du haut + ciel ajouté)
 
   // Jauge de vitesse
   ctx.save(); ctx.translate(GAUGE.x, GAUGE.y);
@@ -333,6 +346,8 @@ function draw() {
   ctx.save(); ctx.translate(X1, 0);
   ctx.fillStyle = vgrad(0, TH, [[0, COL.Cyan], [0.142, COL.Cyan], [0.143, COL.Blue], [0.854, COL.DarkBlue], [0.857, COL.Beige], [1, COL.Beige]]);
   ctx.fillRect(0, 0, TW, TH);
+  tileH(imgCiel, 0, TW, -SKY, SKY + TH / 7, X1);
+  tileH(imgSable, 0, TW, TH * 6 / 7, TH / 7, 0);
   for (let i = 0; i <= model.TempsPlongee / 60; i++) { // Ligne de temps toutes les minutes
     const x = TW * i / (model.TempsPlongee / 60);
     line(x, TH * 6 / 7, x, 0, COL.Gray, 1);

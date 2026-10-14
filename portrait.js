@@ -10,6 +10,7 @@
 const PW = 1080;                 // largeur logique en portrait
 const P_BTN_H = 260;             // zone des boutons en bas
 const P_SLIDER_W = 120;          // curseur poumon à droite
+const P_GAUGE_W = 90;            // jauge de vitesse à gauche
 const P_SPRITE_W = 150, P_SPRITE_H = 110;
 const P_FONT = "bold 40px 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
 let PH = 1920, P_SC = PH - P_BTN_H; // hauteur totale, hauteur de la scène
@@ -68,6 +69,8 @@ function drawPortrait() {
   g.addColorStop(6 / 7 - 0.002, COL.DarkBlue); g.addColorStop(6 / 7, COL.Beige); g.addColorStop(1, COL.Beige);
   ctx.fillStyle = g; ctx.fillRect(0, 0, PW, P_SC);
   ctx.fillStyle = COL.Beige; ctx.fillRect(0, P_SC, PW, PH - P_SC);
+  tileH(imgCiel, 0, PW, 0, P_SC / 7, camX * 0.3);              // nuages en parallaxe
+  tileH(imgSable, 0, PW, P_SC * 6 / 7, PH - P_SC * 6 / 7, camX); // fond défilant avec le plongeur
 
   ctx.save();
   ctx.beginPath(); ctx.rect(0, 0, sceneW, P_SC); ctx.clip();
@@ -80,7 +83,7 @@ function drawPortrait() {
   }
   for (let d = 0; d <= 20; d += 5) {
     line(0, yOfD(d), sceneW, yOfD(d), COL.Gray, 2);
-    if (d > 0) ptext(d + "m", 10, yOfD(d) - 48, COL.Red);
+    if (d > 0) ptext(d + "m", P_GAUGE_W + 10, yOfD(d) - 48, COL.Red);
   }
   // récif (mêmes coordonnées que la V2.6 : 1,7 à 2,7 min, sommet à 19,5 m)
   ctx.fillStyle = COL.Brown; ctx.beginPath();
@@ -121,6 +124,17 @@ function drawPortrait() {
     ctx.drawImage(imgDiver, xd - camX - dw, yOfD(model.Profondeur) - dh / 2, dw, dh);
   }
   ctx.restore();
+
+  // jauge de vitesse à gauche (mêmes couleurs et échelle ±30 m/min que la V2.6)
+  {
+    const gy = P_SC / 7, gh = P_SC * 5 / 7;
+    const gg = ctx.createLinearGradient(0, gy, 0, gy + gh);
+    for (const [o, c] of [[0, COL.Red], [0.25, COL.Red], [0.25, COL.Orange], [0.339, COL.Orange], [0.34, COL.Yellow], [0.419, COL.Yellow],
+      [0.42, COL.Green], [0.5, COL.Green], [0.5, COL.LightGreen], [1, COL.LightGreen]]) gg.addColorStop(o, c);
+    ctx.fillStyle = gg; ctx.fillRect(0, gy, P_GAUGE_W, gh);
+    const v = Math.max(-30, Math.min(30, model.Vitesse));
+    ctx.fillStyle = COL.Black; ctx.fillRect(0, gy + gh / 2 - gh * v / 60 - 5, P_GAUGE_W, 10);
+  }
 
   // oscilloscopes à droite, opacité 50 %
   if (oscVisible) {
