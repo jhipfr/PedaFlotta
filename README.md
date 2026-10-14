@@ -10,6 +10,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 | `model.js` | Physique (portage ligne à ligne) | `Model.cs` |
 | `app.js` | Affichage, souris/tactile, score, paramètres | `MainWindow.xaml(.cs)`, `App.xaml` |
 | `portrait.js` | Mode téléphone vertical | nouveau |
+| `niveau2.html`, `niveau2.js` | Niveau 2 : remontée assistée | nouveau |
 | `index.html`, `style.css` | Page et styles | `MainWindow.xaml`, `App.xaml` |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Mode hors ligne / installation | nouveau |
 | `img/plongeur.png`, `img/Souris.png` | Images | `Resources/` |
@@ -58,6 +59,17 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 
 - La vidange du bloc suit `PressionGonflage × (0,75 × (1 − t/360) + 0,25)`, avec 360 s codé en dur.
 - Le mode « sport » est présent dans le modèle mais jamais activé.
+
+## Niveau 2 : remontée assistée (prototype)
+
+Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : `https://<compte>.github.io/PedaFlotta/niveau2.html`.
+
+- Vue subjective : on tient de la main gauche un plongeur face à nous. Boutons « Sa purge » et « Son inflateur » sur son équipement, « Mon inflateur » et « Ma purge » à gauche, jauge de vitesse à droite (mêmes couleurs que le niveau 1).
+- Deux instances de `model.js`, accrochées : même profondeur et même vitesse. Le mouvement vient de la somme des deux masses apparentes, sur la somme des deux masses, avec des frottements doublés (deux surfaces face à l'eau).
+- Départ à 20 m, les deux plongeurs équilibrés (gilets gonflés juste ce qu'il faut).
+- Son image monte ou descend selon l'écart de flottabilité (lui − moi), lissé sur 0,5 s : 2 kg plus léger que moi, son front sort par le haut ; 2 kg plus lourd, on ne voit que le haut de sa tête. Ses boutons restent à l'écran pour rester utilisables.
+- Molette : mon volume pulmonaire moyen. Multi-touch : on peut appuyer sur deux boutons à la fois.
+- Fin à la surface : durée, vitesse maximale et temps passé au-dessus de la zone verte (4,8 m/min).
 
 ## Publier sur GitHub Pages
 
