@@ -108,3 +108,4 @@ Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode insta
 
 - « Sa purge » : un chapelet de bulles sort de son épaule (côté tirette) tant qu'on appuie, s'il reste de l'air dans son gilet. « Sa purge » est à la hauteur de « Son inflateur ».
 - Son de l'inflateur (`son/inflateur.mp3`, 8 premières secondes du fichier « AIRBlow Fuite d'air » fourni, en mp3 mono 96 kbit/s) : joué en boucle tant qu'on appuie sur mon inflateur ou le sien. Le navigateur n'active le son qu'après un premier appui à l'écran.
+- Palier : à la première arrivée à 3 m, la ligne DURÉE de l'ordinateur devient PALIER sur fond vert et décompte 30 s, puis la durée de plongée revient.

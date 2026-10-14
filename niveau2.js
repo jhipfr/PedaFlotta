@@ -30,6 +30,7 @@ let score = 0, bonusSurface = 0, gameOver = false, nbGonflages = 0;
 const DUREE_MAX = NIV >= 3 ? 360 : 240; // s : largeur du bandeau ; game over si pas en surface à 4 min (6 min aux niveaux 3 et 4)
 const vitesseLimite = (d) => (d > 30 ? 20 : d > 10 ? 10 : 5);
 let particules = [], bulles = [];
+let tPalier = null;          // date d'arrivée à 3 m (s) : l'ordinateur décompte alors le palier de 30 s
 let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de demi-vie 1 s
 const DEMI_VIE_V = 1;        // s
 let traj = [];               // trajectoire réelle {t, d}, un point toutes les 0,2 s
@@ -67,7 +68,7 @@ function preparer(m) {
 function nouvellePartie() {
   preparer(moi); preparer(lui);
   ecartAff = lui.MasseApparentePlongeur - moi.MasseApparentePlongeur;
-  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false; nbGonflages = 0;
+  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false; nbGonflages = 0; tPalier = null;
   profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }];
   etat = "attente";
 }
@@ -111,6 +112,7 @@ function pas(dt) {
     bulles.push({ x: -1.25 + (Math.random() - 0.5) * 0.1, y: 1.5, r: 0.03 + Math.random() * 0.05 });
   for (const b of bulles) { b.y -= 2.5 * dt; b.x += (Math.random() - 0.5) * 0.02; }
   bulles = bulles.filter((b) => b.y > -6);
+  if (etat === "plongee" && tPalier === null && DEPART > 3 && moi.Profondeur <= 3) tPalier = moi.time;
   if (etat === "plongee" && moi.Profondeur <= 0) {
     const ecart = Math.abs(moi.time - tSurfaceProfil); // avance ou retard : même décroissance
     bonusSurface = Math.max(0, 100 - 2 * ecart);
@@ -281,8 +283,12 @@ function dessinerOrdinateur(x, y, w, h, ts) {
   ctx.fillText((v >= 0.5 ? "▲" : v <= -0.5 ? "▼" : "") + Math.abs(v).toFixed(0), sx + sw - 6 * u, sy + 20 * u);
   ctx.font = `bold ${11 * u}px ${FONT}`; ctx.fillText("m/min", sx + sw - 6 * u, sy + 52 * u);
   ctx.fillStyle = "#333a42"; ctx.fillRect(sx + 4 * u, sy + 67 * u, sw - 8 * u, 1.5);
-  ctx.textAlign = "left"; ctx.fillStyle = "#9aa3ad"; ctx.font = `bold ${10 * u}px ${FONT}`; ctx.fillText("DURÉE", sx + 6 * u, sy + 74 * u);
-  ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = `bold ${20 * u}px ${FONT}`; const tt = Math.max(0, Math.trunc(moi.time));
+  // arrivée à 3 m : décompte du palier de 30 s sur fond vert, puis retour à la durée
+  const reste = tPalier === null ? 0 : 30 - (moi.time - tPalier);
+  if (reste > 0) { ctx.fillStyle = "#119a2b"; rrect(sx + 3 * u, sy + 69 * u, sw - 6 * u, 28 * u, 4 * u); ctx.fill(); }
+  ctx.textAlign = "left"; ctx.fillStyle = reste > 0 ? "#fff" : "#9aa3ad"; ctx.font = `bold ${10 * u}px ${FONT}`; ctx.fillText(reste > 0 ? "PALIER" : "DURÉE", sx + 6 * u, sy + 74 * u);
+  ctx.textAlign = "right"; ctx.fillStyle = "#fff"; ctx.font = `bold ${20 * u}px ${FONT}`;
+  const tt = reste > 0 ? Math.ceil(reste) : Math.max(0, Math.trunc(moi.time));
   ctx.fillText(Math.trunc(tt / 60) + ":" + String(tt % 60).padStart(2, "0"), sx + sw - 6 * u, sy + 72 * u);
 }
 
