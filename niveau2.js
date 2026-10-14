@@ -6,7 +6,7 @@
 "use strict";
 
 const STEP = 0.01;           // pas de calcul (s), comme le niveau 1
-const DEPART = 20;           // profondeur de départ (m)
+let DEPART = 20;             // profondeur de départ (m), réglable dans Paramètres
 const ECART_MAX = 2;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
 const LISSAGE = 0.5;         // s : constante de temps de l'affichage de l'écart
 const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
@@ -84,9 +84,9 @@ function redim() {
 window.addEventListener("resize", redim);
 
 function bouton(id, label, x, y, w, h, couleur, m, champ) {
-  const actif = m[champ];
+  const actif = m ? m[champ] : false;
   boutons.push({ id, x, y, w, h, m, champ });
-  ctx.fillStyle = actif ? "#00C000" : couleur; ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
+  ctx.fillStyle = m && actif ? "#00C000" : couleur; ctx.strokeStyle = "#000"; ctx.lineWidth = 3;
   rrect(x, y, w, h, 14); ctx.fill(); ctx.stroke();
   ctx.fillStyle = "#000"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   let fs = Math.min(30, h * 0.36);
@@ -156,28 +156,38 @@ function dessiner() {
   const ts = tt < 60 ? Math.trunc(tt) + "s" : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
   ctx.fillStyle = "#fff"; ctx.textBaseline = "top";
   ctx.textAlign = "center";
-  ctx.font = `bold 48px ${FONT}`; ctx.fillText(ts, LW / 2, 12);
-  ctx.font = `bold 40px ${FONT}`; ctx.fillText(fr(moi.Profondeur, 1) + " m", LW / 2, 64);
-  ctx.textAlign = "left"; ctx.font = `bold 36px ${FONT}`;
-  ctx.fillText(moi.Vitesse.toFixed(0) + " m/min", 12, 16);
-  ctx.font = `bold 24px ${FONT}`; ctx.fillText("Niveau 2", 12, 60);
-  ctx.textAlign = "right"; ctx.font = `bold 24px ${FONT}`;
+  const xh = portrait ? (colG + LW - jaugeW) / 2 : LW / 2;
+  ctx.font = `bold ${portrait ? 40 : 48}px ${FONT}`; ctx.fillText(ts, xh, 12);
+  ctx.font = `bold ${portrait ? 34 : 40}px ${FONT}`; ctx.fillText(fr(moi.Profondeur, 1) + " m", xh, portrait ? 58 : 64);
+  if (etat !== "plongee") bouton("param", "Paramètres", 10, 10, portrait ? 150 : 210, 64, "#DDDDDD");
+  ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "left"; ctx.font = `bold 36px ${FONT}`;
+  ctx.fillText(moi.Vitesse.toFixed(0) + " m/min", 12, 90);
+  ctx.font = `bold 24px ${FONT}`; ctx.fillText("Niveau 2", 12, 136);
+  ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
   ctx.fillText("← Niveau 1", LW - 12, 16);
   boutons.push({ id: "niveau1", x: LW - 160, y: 0, w: 160, h: 56 });
 
-  if (etat === "attente") bandeau(["Remontée assistée depuis " + DEPART + " m", "Appuyer pour commencer"], cx);
-  if (etat === "fin") bandeau(["Surface en " + ts, "Vitesse max " + vMax.toFixed(0) + " m/min",
-    "Au-dessus du vert : " + tHorsVert.toFixed(0) + " s", "Appuyer pour recommencer"], cx);
+  if (etat === "attente") { bandeau(portrait ? ["Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, LH / 2 - (portrait ? 110 : 90)); boutonGo(cx); }
+  if (etat === "fin") { bandeau(["Surface en " + ts, "Vitesse max " + vMax.toFixed(0) + " m/min",
+    "Au-dessus du vert : " + tHorsVert.toFixed(0) + " s"], cx, LH / 2 - 130); boutonGo(cx); }
 }
 
-function bandeau(lignes, cx) {
-  const fs = LW < 800 ? 30 : 40, lh = fs * 1.4;
+// bouton Go opaque : lance la remontée
+function boutonGo(cx) {
+  const w = LW < 800 ? 200 : 260, h = LW < 800 ? 110 : 130, x = clamp(cx - w / 2, 10, LW - w - 10), y = LH / 2 + 20;
+  boutons.push({ id: "go", x, y, w, h });
+  ctx.fillStyle = "#00A000"; ctx.strokeStyle = "#000"; ctx.lineWidth = 4; rrect(x, y, w, h, 20); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = `bold 70px ${FONT}`;
+  ctx.fillText("Go", x + w / 2, y + h / 2 + 4);
+}
+function bandeau(lignes, cx, yc) {
+  const fs = LW < 800 ? 26 : 40, lh = fs * 1.4;
   ctx.font = `bold ${fs}px ${FONT}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   const w = Math.min(LW - 20, Math.max(...lignes.map((l) => ctx.measureText(l).width)) + 60), h = lignes.length * lh + 40;
   const x = clamp(cx - w / 2, 10, LW - w - 10);
-  ctx.fillStyle = "rgba(0,0,0,0.6)"; rrect(x, LH / 2 - h / 2, w, h, 16); ctx.fill();
+  ctx.fillStyle = "rgba(0,0,0,0.6)"; rrect(x, yc - h / 2, w, h, 16); ctx.fill();
   ctx.fillStyle = "#fff";
-  lignes.forEach((l, i) => ctx.fillText(l, x + w / 2, LH / 2 - h / 2 + 20 + lh * (i + 0.5)));
+  lignes.forEach((l, i) => ctx.fillText(l, x + w / 2, yc - h / 2 + 20 + lh * (i + 0.5)));
 }
 
 // Plongeur vu de face, tête centrée en (cx, hy), rayon de tête R. colG : bord droit de ma colonne de boutons.
@@ -254,9 +264,13 @@ cv.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const b = cible(aPos(e));
   if (b && b.id === "niveau1") { location.href = "index.html"; return; }
-  if (etat === "attente") { etat = "plongee"; precedent = performance.now(); accu = 0; return; }
-  if (etat === "fin") { nouvellePartie(); return; }
-  if (b && b.m) { b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
+  if (!b) return;
+  if (b.id === "param") { ouvrirParams(); return; }
+  if (b.id === "go") {
+    if (etat === "fin") nouvellePartie();
+    etat = "plongee"; precedent = performance.now(); accu = 0; return;
+  }
+  if (etat === "plongee" && b.m) { b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
 });
 function relacher(e) { const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
 cv.addEventListener("pointerup", relacher);
@@ -265,6 +279,33 @@ cv.addEventListener("contextmenu", (e) => e.preventDefault());
 function relacherTout() { appuis.clear(); for (const m of [moi, lui]) m.IsInflateur = m.IsPurge = false; }
 // molette : mon volume pulmonaire moyen (±0,1 L), comme le niveau 1
 cv.addEventListener("wheel", (e) => { e.preventDefault(); moi.OffsetRespiration += e.deltaY < 0 ? 0.1 : -0.1; }, { passive: false });
+
+// ---------- paramètres : profondeur de départ et caractéristiques de chaque plongeur ----------
+const PARAMS = [
+  ["Profondeur de départ (m)", () => DEPART, (v) => { DEPART = clamp(v, 1, 25); }],
+  ["Ma masse (kg)", () => moi.MassePlongeur, (v) => { moi.MassePlongeur = v; }],
+  ["Mon volume (L)", () => moi.VolumePlongeur, (v) => { moi.VolumePlongeur = v; }],
+  ["Mon lest (kg)", () => moi.LestPlongeur, (v) => { moi.LestPlongeur = v; }],
+  ["Sa masse (kg)", () => lui.MassePlongeur, (v) => { lui.MassePlongeur = v; }],
+  ["Son volume (L)", () => lui.VolumePlongeur, (v) => { lui.VolumePlongeur = v; }],
+  ["Son lest (kg)", () => lui.LestPlongeur, (v) => { lui.LestPlongeur = v; }],
+];
+const panneau = document.getElementById("params"), champs = document.getElementById("champs");
+const entrees = PARAMS.map(([label]) => {
+  const l = document.createElement("label"); l.textContent = label;
+  const i = document.createElement("input"); i.type = "text"; i.inputMode = "decimal";
+  l.appendChild(i); champs.appendChild(l); return i;
+});
+function ouvrirParams() {
+  relacherTout(); etat = "attente";
+  PARAMS.forEach(([, get], n) => { entrees[n].value = String(get()); });
+  panneau.style.display = "flex";
+}
+document.getElementById("valider").addEventListener("click", () => {
+  PARAMS.forEach(([, , set], n) => { const v = parseFloat(entrees[n].value.replace(",", ".")); if (isFinite(v) && v >= 0) set(v); });
+  panneau.style.display = "none";
+  nouvellePartie();
+});
 
 // ---------- horloge : pas fixes de 10 ms ----------
 let precedent = performance.now(), accu = 0;

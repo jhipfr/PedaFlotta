@@ -13,10 +13,19 @@
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none;
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
   canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  #params { display: none; position: fixed; inset: 0; background: rgba(128,128,128,0.97); z-index: 10;
+    flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    font: bold 20px 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; touch-action: auto; }
+  #champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 40px; width: min(900px, 92vw); }
+  #champs label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  #champs input { -webkit-user-select: text; user-select: text; width: 110px; font: inherit; padding: 6px; border: 1px solid #ABADB3; }
+  #valider { font: inherit; font-size: 24px; padding: 14px 60px; border: 1px solid #707070; border-radius: 6px;
+    background: linear-gradient(#F3F3F3, #DDD 50%, #CDCDCD); }
 </style>
 </head>
 <body>
 <canvas id="cv"></canvas>
+<div id="params"><div id="champs"></div><button id="valider">Valider</button></div>
 <script src="model.js"></script>
 <script src="niveau2.js"></script>
 </body>

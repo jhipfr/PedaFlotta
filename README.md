@@ -66,7 +66,8 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 
 - Vue subjective : on tient de la main gauche un plongeur face à nous. Boutons « Sa purge » et « Son inflateur » sur son équipement, « Mon inflateur » et « Ma purge » à gauche, jauge de vitesse à droite (mêmes couleurs que le niveau 1).
 - Deux instances de `model.js`, accrochées : même profondeur et même vitesse. Le mouvement vient de la somme des deux masses apparentes, sur la somme des deux masses, avec des frottements doublés (deux surfaces face à l'eau).
-- Départ à 20 m, les deux plongeurs équilibrés (gilets gonflés juste ce qu'il faut).
+- Paramètres : profondeur de départ (20 m par défaut), masse, volume et lest de chacun des deux plongeurs.
+- Au départ, les deux plongeurs sont équilibrés à la profondeur choisie (gilets gonflés juste ce qu'il faut). Le bouton **Go** lance la remontée.
 - Son image monte ou descend selon l'écart de flottabilité (lui − moi), lissé sur 0,5 s : 2 kg plus léger que moi, son front sort par le haut ; 2 kg plus lourd, on ne voit que le haut de sa tête. Ses boutons restent à l'écran pour rester utilisables.
 - Molette : mon volume pulmonaire moyen. Multi-touch : on peut appuyer sur deux boutons à la fois.
 - Fin à la surface : durée, vitesse maximale et temps passé au-dessus de la zone verte (4,8 m/min).
