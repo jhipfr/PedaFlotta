@@ -181,7 +181,7 @@ function dessiner() {
   const yMin = BH + (portrait ? 210 : 230), yMax = LH - mh - bh - 30; // entre l'ordinateur / Paramètres et mes boutons
   const bx1 = clamp(cx - 1.9 * R - bw, jaugeW + 5, LW - curW - bw - 10);
   const bx2 = clamp(cx + 1.75 * R, jaugeW + 5, LW - curW - bw - 10);
-  const by1 = clamp(hy + 1.6 * R - bh / 2, yMin, yMax), by2 = clamp(hy + 0.25 * R - bh / 2, yMin, yMax);
+  const by2 = clamp(hy + 0.25 * R - bh / 2, yMin, yMax), by1 = by2; // les deux à la hauteur de son inflateur
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
   ctx.beginPath(); ctx.moveTo(bx1 + bw, by1 + bh / 2); ctx.lineTo(cx - 1.25 * R, hy + 1.6 * R);
   ctx.moveTo(bx2, by2 + bh / 2); ctx.lineTo(cx + 1.45 * R, hy + 0.25 * R); ctx.stroke(); ctx.setLineDash([]);
