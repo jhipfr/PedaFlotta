@@ -1,6 +1,6 @@
 // Service worker : met l'application en cache pour l'utilisation hors ligne.
 // Changer CACHE à chaque publication pour forcer la mise à jour chez les utilisateurs.
-const CACHE = "pedaflotta-v2.6-web-2";
+const CACHE = "pedaflotta-web-3";
 const FILES = [
   "./", "index.html", "style.css", "model.js", "app.js", "manifest.webmanifest",
   "img/plongeur.png", "img/Souris.png", "icons/icon-192.png", "icons/icon-512.png",

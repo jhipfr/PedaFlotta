@@ -23,24 +23,31 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 
 ## Écarts par rapport à l'original
 
-1. **Repère 1920 × 1080** : l'écran WPF maximisé est reproduit dans un repère fixe de 1920 × 1080, puis mis à l'échelle de la fenêtre. Le score (calculé en pixels dans l'original) correspond donc à un écran 1920 × 1080 à 100 %. Sur un PC configuré autrement, l'ancien score était différent.
-2. **Cadence** : le score, la montée des bulles et leur apparition sont calculés à chaque tick (code d'origine). Le tick web est fixé à 10 ms, la valeur du code. Hypothèse non vérifiée : sous Windows, le DispatcherTimer tourne souvent plus lentement (~15,6 ms), et le score web serait alors plus élevé que celui de l'.exe.
-3. **Onglet masqué** : la simulation se met en pause, sinon le pas de temps réel deviendrait énorme au retour (ajout web).
-4. **Grille de l'oscilloscope gilet** : tracée sur toute la hauteur. Dans l'original, elle ne couvre que la moitié haute (placement XAML du `CanvasGiletGrid`).
-5. **Tactile** : un appui = clic gauche (gonflage). Sans clic droit, la purge passe par le bouton Purge.
-6. **Molette** : ±0,1 partout. Dans l'original, la molette au-dessus du curseur est peut-être comptée deux fois (gestionnaire sur le curseur et sur la fenêtre). Non vérifié.
-7. **Sons** : les fichiers `.wav` et `.mp3` ne sont pas repris, car aucun n'est joué dans le code V2.6 (le seul `SoundPlayer` pointe vers un chemin d'un autre PC et n'est jamais lancé).
-8. **Format des nombres** : virgule décimale dans les étiquettes (on suppose un Windows en français), point dans le curseur et les paramètres (format des bindings WPF).
+### Modifications demandées (14/10/2026)
 
-## Comportements de l'original conservés tels quels (à corriger si souhaité)
+- **Masse du plongeur** : 77 kg par défaut (81 kg dans la V2.6).
+- **Poumons** : la masse apparente ne compte que la moitié du volume pulmonaire instantané dans la poussée.
+- **Volume Max Poumon** : il règle l'échelle de l'oscilloscope et le volume pulmonaire maximal. Le curseur va de 1 L + amplitude à Volume Max − amplitude (1,5 à 4,5 L par défaut, comme avant).
+- **Taille Bloc et Pression Initiale** : elles sont prises en compte. Le poids d'air initial vaut pression × volume × 0,0012 kg/L.
+- **Paramètres** : le panneau couvre tout l'écran et arrête la simulation. Le bouton « Valider » le ferme et relance la plongée (Restart).
+- **Écrans plus hauts que 16:9** (4:3, 16:10…) : le ciel est agrandi au lieu d'afficher des bandes noires. Sur un écran plus large, il reste des bandes sur les côtés.
+- **Horloge** : la simulation avance par pas fixes de 10 ms, rattrapés sur l'horloge réelle. Le résultat ne dépend plus de la fréquence d'affichage. Si l'onglet est masqué ou l'appareil en veille, la simulation reprend sans saut.
+  - Score = intégrale de l'écart au profil guide, **en mètres × secondes** (la V2.6 additionnait des pixels à chaque tick). Les scores ne sont donc pas comparables à ceux de l'.exe.
+  - Bulles : 5 par seconde en moyenne pendant l'expiration, montée de 15 px/s, grossissement de 1 px/s (valeurs V2.6 par tick ramenées à la seconde).
+- **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus.
 
-- **Taille Bloc** et **Pression Initiale** saisies dans Paramètres sont écrasées par `InitModel()` (15 L / 200 bar) à chaque redémarrage, donc sans effet.
-- **Volume Max Poumon** ne sert qu'à l'échelle de l'oscilloscope. Le poumon reste borné en dur entre 1 et 5 L.
+### Autres écarts
+
+- Grille de l'oscilloscope gilet sur toute la hauteur (dans la V2.6, seulement la moitié haute).
+- Tactile : un appui = gonflage. Sans clic droit, la purge passe par le bouton Purge.
+- Molette : ±0,1 L partout.
+- Sons non repris (aucun n'est joué dans le code V2.6).
+- Virgule décimale dans les étiquettes, point dans le curseur et les paramètres.
+
+### Comportements de la V2.6 conservés
+
 - La vidange du bloc suit `PressionGonflage × (0,75 × (1 − t/360) + 0,25)`, avec 360 s codé en dur.
-- Le mode « sport » (respiration ample) est présent dans le modèle mais jamais activé (code clavier commenté).
-- Le bouton Pause reste actif quand le panneau Paramètres est ouvert.
-
-Aucune formule ni valeur n'a été ajoutée : tout vient de `Model.cs` et `MainWindow.xaml.cs`.
+- Le mode « sport » est présent dans le modèle mais jamais activé.
 
 ## Publier sur GitHub Pages
 

@@ -14,6 +14,7 @@
 <body>
 <div id="stage">
   <canvas id="cv"></canvas>
+  <div id="inner">
 
   <div id="timeCell" class="cell top center"><span id="timeLbl" class="lbl">Sec</span></div>
   <div id="vitCell" class="cell bottom center"><span id="vitLbl" class="lbl">Vitesse</span></div>
@@ -34,7 +35,6 @@ Ballast</span></div>
     <div id="thumb"><span id="thumbTxt">3.00</span></div>
   </div>
 
-  <div id="params" class="params"></div>
 
   <div id="wRestart" class="btnwrap"><button id="btnRestart" class="btn dflt">Restart</button></div>
   <div id="wGraph" class="btnwrap"><button id="btnGraph" class="btn dflt">Graphique</button></div>
@@ -42,6 +42,10 @@ Ballast</span></div>
   <div id="wGilet" class="btnwrap frame" style="background:#FFC0CB"><button id="btnGilet" class="btn dflt">Gilet</button></div>
   <div id="wPurge" class="btnwrap frame" style="background:#800080"><button id="btnPurge" class="btn dflt">Purge</button></div>
   <div id="wParam" class="btnwrap"><button id="btnParam" class="btn dflt">Paramètres</button></div>
+  </div>
+  <div id="params" class="params"><div id="paramsInner">
+    <div id="wParamClose" class="btnwrap"><button id="btnParamClose" class="btn dflt">Valider</button></div>
+  </div></div>
 </div>
 <script src="model.js"></script>
 <script src="app.js"></script>

@@ -29,6 +29,7 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; -webkit
 .btn.dflt:hover { background-color: #CCC; }
 .btn:disabled { cursor: not-allowed; background-color: rgba(169,169,169,0.25) !important; color: #000; }
 
-.params { position: absolute; visibility: hidden; background: rgba(128,128,128,0.85); }
+.params { position: absolute; visibility: hidden; background: rgba(128,128,128,0.95); z-index: 10; }
+#inner, #paramsInner { position: absolute; left: 0; width: 1920px; height: 1080px; }
 .plabel { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; }
 .pinput { position: absolute; box-sizing: border-box; font: inherit; padding: 0 4px; border: 1px solid #ABADB3; background: #fff; }

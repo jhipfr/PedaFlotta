@@ -1,7 +1,9 @@
 // Portage JavaScript de MainWindow.xaml / MainWindow.xaml.cs (PedaFlotta V2.6).
-// Toute la mise en page est exprimée dans un repère logique 1920 x 1080 (fenêtre WPF
-// maximisée) puis mise à l'échelle de l'écran, afin que les calculs en pixels de
-// l'original (score, bulles, étiquettes) restent identiques quelle que soit la taille.
+// La mise en page est exprimée dans un repère logique 1920 x 1080 (fenêtre WPF maximisée)
+// mis à l'échelle de l'écran. Si l'écran est plus haut que 16:9, le ciel est agrandi
+// (bande SKY ajoutée en haut) au lieu d'afficher des bandes noires.
+// La simulation avance par pas fixes de 10 ms, cadencés par l'horloge réelle : le
+// résultat ne dépend plus de la fréquence d'affichage de l'appareil.
 "use strict";
 
 const W = 1920, H = 1080;
@@ -33,7 +35,9 @@ const model = new Model();
 
 // ---------- état de la vue (champs de MainWindow) ----------
 let xPlongeur = 0, decalageEtiquette = 0, LastEtiquette = -21;
-const vitesseAscension = 0.15, Grossissement = 0.01;
+// Valeurs V2.6 par tick de 10 ms converties en valeurs par seconde :
+const vitesseAscension = 15, Grossissement = 1, frequenceBulles = 5; // px/s, px/s, bulles/s pendant l'expiration
+const STEP = 0.01; // s, pas de calcul fixe
 let score = 0, tempo = 0, deltatempo = 0, a = 0, b = 1;
 let traj = [], guide = [], markers = [], bubbles = [];
 let lungGridX = [], giletGridX = [];
@@ -50,7 +54,7 @@ const $ = (id) => document.getElementById(id);
 const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
 const speedLayer = document.createElement("canvas"), sctx = speedLayer.getContext("2d");
 const imgDiver = new Image(); imgDiver.src = "img/plongeur.png"; imgDiver.onload = () => { dirty = true; };
-let scale = 1, k = 1, dirty = true;
+let scale = 1, k = 1, dirty = true, SKY = 0, SH = H; // SKY : hauteur de ciel ajoutée, SH : hauteur totale
 
 function place(el, x, y, w, h) {
   Object.assign(el.style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
@@ -79,30 +83,43 @@ function layout() {
   place($("wGilet"), ...cell(26, 3));
   place($("wPurge"), ...cell(31, 3));
   place($("wParam"), 30, 6 * R + 30, C0 - 60, R - 60);
-  place($("params"), 0, 0, W, 6 * R);
+  place($("wParamClose"), 30, 6 * R + 30, C0 - 60, R - 60);
 }
 
 function resize() {
-  scale = Math.min(window.innerWidth / W, window.innerHeight / H);
-  const ox = (window.innerWidth - W * scale) / 2, oy = (window.innerHeight - H * scale) / 2;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  SH = Math.max(H, W * vh / vw); // écran plus haut que 16:9 : on agrandit le ciel
+  SKY = SH - H;
+  scale = Math.min(vw / W, vh / SH);
+  const ox = (vw - W * scale) / 2, oy = (vh - SH * scale) / 2;
   stage.style.transform = `translate(${ox}px, ${oy}px) scale(${scale})`;
+  stage.style.height = SH + "px";
+  $("inner").style.top = SKY + "px";
+  place($("params"), 0, 0, W, SH);
+  $("paramsInner").style.top = SKY + "px";
+  cv.style.height = SH + "px";
   k = scale * (window.devicePixelRatio || 1);
-  cv.width = Math.round(W * k); cv.height = Math.round(H * k);
+  cv.width = Math.round(W * k); cv.height = Math.round(SH * k);
   speedLayer.width = cv.width; speedLayer.height = cv.height;
   redrawSpeedLayer();
   dirty = true;
 }
 
-// ---------- boucle (DispatcherTimer 10 ms) ----------
-let timerId = null, previous = 0;
-function timerStart() { if (!timerId) timerId = setInterval(tick, 10); }
-function timerStop() { if (timerId) { clearInterval(timerId); timerId = null; } }
-function tick() {
-  const now = performance.now();
-  const periode = (now - previous) / 1000;
+// ---------- horloge : pas fixes de 10 ms rattrapant le temps réel ----------
+let running = false, previous = 0, accu = 0;
+function timerStart() { running = true; previous = performance.now(); accu = 0; }
+function timerStop() { running = false; }
+function advance(now) {
+  // Écart borné à 0,25 s : après une mise en veille ou un onglet masqué, la simulation reprend sans saut.
+  accu += Math.min(0.25, Math.max(0, (now - previous) / 1000));
   previous = now;
-  model.compute(periode);
-  refreshAll();
+  while (running && accu >= STEP) {
+    accu -= STEP;
+    model.compute(STEP);
+    refreshAll(STEP);
+  }
+  updateLabels();
+  updateSlider();
   dirty = true;
 }
 // IsPause : true = simulation en marche (sémantique de l'original)
@@ -110,7 +127,7 @@ let isPause = false;
 function setIsPause(v) {
   if (v !== isPause) {
     isPause = v;
-    if (v) { previous = performance.now(); timerStart(); } else timerStop();
+    if (v) timerStart(); else timerStop();
     updatePauseBtn();
   }
 }
@@ -118,9 +135,9 @@ function setIsPause(v) {
 // ---------- Go / InitCollection ----------
 function go() {
   model.initModel();
-  previous = performance.now();
+  previous = performance.now(); accu = 0;
   tempo = 0; decalageEtiquette = 0; deltatempo = 0;
-  setOffset(3);
+  setOffset(model.OffsetRespiration);
   bubbles = []; markers = []; speedSegs = [];
   sliderEnabled = true;
   oscVisible = true;
@@ -163,30 +180,30 @@ function updateLabels() {
   $("profLbl").firstElementChild.textContent = "Profondeur : " + fr(model.Profondeur, 2) + "m";
 }
 
-function refreshAll() {
-  updateLabels();
+function refreshAll(dt) {
   giletFlat = false;
 
   // Les bulles
-  if (model.Expiration && Math.random() > 0.95) {
+  if (model.Expiration && Math.random() < frequenceBulles * dt) {
     bubbles.push({ x: Math.trunc(xPlongeur), y: Math.trunc(TH / 7 + (TH * 6 / 7) * model.Profondeur / 30), w: 4 });
   }
   for (let i = 0; i < bubbles.length; i++) { // Croissance et remontée des bulles.
     const bb = bubbles[i];
-    bb.y -= vitesseAscension;
-    bb.w += Grossissement;
+    bb.y -= vitesseAscension * dt;
+    bb.w += Grossissement * dt;
     if (bb.y < TH / 7) { bubbles.splice(i, 1); i--; } // disparition des bulles
   }
 
   if (xPlongeur <= TW) {
     traj.push({ x: xPlongeur, y: model.Profondeur / 30 * TH * 6 / 7 + TH / 7 });
     xPlongeur = (model.time / model.TempsPlongee) * TW;
-    if (b < guide.length - 1 && traj[a].x > guide[b].x) b++;
-    calculScore(a, b);
+    while (b < guide.length - 1 && traj[a].x > guide[b].x) b++;
+    calculScore(a, b, dt);
     a++;
 
     // Ligne de l'offset poumon (curseur)
-    const offY = TVH / 2 - TVH / 2 * (model.OffsetRespiration - 3) * 2 / 3 * 5 / 7;
+    const mid = (model.OffsetMin + model.OffsetMax) / 2, half = Math.max(1e-9, (model.OffsetMax - model.OffsetMin) / 2);
+    const offY = TVH / 2 - TVH / 2 * (model.OffsetRespiration - mid) / half * 5 / 7;
     addSpeedSeg(lastOff.x, lastOff.y, xPlongeur, offY, 3, COL.DeepSkyBlue);
     lastOff = { x: xPlongeur, y: offY };
 
@@ -228,7 +245,6 @@ function refreshAll() {
   }
   sprite.x = xPlongeur - 75;
   sprite.y = TH / 7 - 55 + (TH * 6 / 7) * model.Profondeur / 30;
-  updateSlider();
 }
 
 function addMarker(seconds, debit, color) {
@@ -241,8 +257,10 @@ function addMarker(seconds, debit, color) {
   LastEtiquette = xPlongeur;
 }
 
-function calculScore(i, j) {
-  score += Math.sqrt(Math.pow(regLin(i, j) - traj[i].y, 2));
+// Score = intégrale de l'écart au profil guide, en mètres x secondes (V2.6 : somme d'écarts en pixels par tick).
+const PX_PAR_M = TH / 35;
+function calculScore(i, j, dt) {
+  score += Math.abs(regLin(i, j) - traj[i].y) / PX_PAR_M * dt;
   $("scoreLbl").textContent = "Score : \n" + score.toFixed(0);
 }
 function regLin(i, j) {
@@ -260,8 +278,9 @@ function drawSeg(s) {
   sctx.beginPath(); sctx.moveTo(X1 + s.x1, s.y1); sctx.lineTo(X1 + s.x2, s.y2); sctx.stroke();
 }
 function redrawSpeedLayer() {
-  sctx.setTransform(k, 0, 0, k, 0, 0);
-  sctx.clearRect(0, 0, W, H);
+  sctx.setTransform(1, 0, 0, 1, 0, 0);
+  sctx.clearRect(0, 0, speedLayer.width, speedLayer.height);
+  sctx.setTransform(k, 0, 0, k, 0, SKY * k);
   for (const s of speedSegs) drawSeg(s);
 }
 
@@ -282,6 +301,8 @@ function text(s, x, y, color, align = "left") {
 
 function draw() {
   ctx.setTransform(k, 0, 0, k, 0, 0);
+  ctx.fillStyle = COL.Cyan; ctx.fillRect(0, 0, W, SKY + 1); // ciel ajouté (écrans plus hauts que 16:9)
+  ctx.setTransform(k, 0, 0, k, 0, SKY * k);
   // Fond principal
   ctx.fillStyle = vgrad(0, H, [[0, COL.Cyan], [0.5, COL.Cyan], [0.5, COL.Beige], [1, COL.Beige]]);
   ctx.fillRect(0, 0, W, H);
@@ -336,7 +357,7 @@ function draw() {
   ctx.restore();
 
   // Graphique vitesse / offset
-  if (speedVisible) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(speedLayer, 0, 0); ctx.setTransform(k, 0, 0, k, 0, 0); }
+  if (speedVisible) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(speedLayer, 0, 0); ctx.setTransform(k, 0, 0, k, 0, SKY * k); }
 
   // Bulles
   ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -370,7 +391,8 @@ function scope(r, values, vmax, fill, gridX) {
   ctx.restore();
 }
 
-function frame() {
+function frame(now) {
+  if (running) advance(now);
   if (dirty) { draw(); dirty = false; }
   requestAnimationFrame(frame);
 }
@@ -388,15 +410,15 @@ function setBg(btn, c) { btn.style.backgroundColor = c; btn.classList.remove("df
 const THUMB_H = 80;
 function setOffset(v) { model.OffsetRespiration = v; updateSlider(); }
 function updateSlider() {
-  const v = model.OffsetRespiration;
-  const y = (4.5 - v) / (4.5 - 1.5) * (SLIDER.h - THUMB_H);
+  const v = model.OffsetRespiration, lo = model.OffsetMin, hi = model.OffsetMax;
+  const y = hi > lo ? (hi - v) / (hi - lo) * (SLIDER.h - THUMB_H) : 0;
   $("thumb").style.top = y + "px";
   $("thumbTxt").textContent = v.toFixed(2);
 }
 function sliderValueAt(clientY, grabDy) {
   const rect = $("slider").getBoundingClientRect();
   const y = (clientY - rect.top) / scale - grabDy;
-  return 4.5 - (y / (SLIDER.h - THUMB_H)) * 3;
+  return model.OffsetMax - (y / (SLIDER.h - THUMB_H)) * (model.OffsetMax - model.OffsetMin);
 }
 
 // ---------- paramètres ----------
@@ -409,7 +431,7 @@ const PARAMS = [
     ["Vitesse De Purge (L/min)", "VitesseDePurge"]]],
 ];
 function buildParams() {
-  const p = $("params"), unit = W / 5, rh = 6 * R / 13;
+  const p = $("params").firstElementChild, unit = W / 5, rh = 6 * R / 13;
   const colX = { 1: 0.5 * unit, 3: 2 * unit, 5: 3.5 * unit };
   for (const [col, title, fields] of PARAMS) {
     const mk = (tag, row, cls) => { const e = document.createElement(tag); e.className = cls; place(e, colX[col], row * rh, unit, rh); p.appendChild(e); return e; };
@@ -485,22 +507,23 @@ $("btnGraph").addEventListener("pointerup", () => {
   dirty = true;
 });
 $("btnPause").addEventListener("pointerdown", () => setIsPause(!isPause));
+// Panneau Paramètres : couvre tout l'écran, arrête la simulation ; sa fermeture relance (Restart).
 $("btnParam").addEventListener("click", () => {
-  if (paramsVisible) { paramsVisible = false; setIsPause(false); }
-  else { paramsVisible = true; refreshParamInputs(); }
-  if (paramsVisible) {
-    timerStop();
-    enabled.purge = enabled.purgeRapide = enabled.restart = enabled.gilet = false;
-    sliderEnabled = false;
-    updateButtons();
-  } else {
-    if (document.activeElement) document.activeElement.blur();
-    speedVisible = false;
-    go();
-  }
+  paramsVisible = true;
+  setIsPause(false);
+  refreshParamInputs();
+  enabled.purge = enabled.purgeRapide = enabled.restart = enabled.gilet = false;
+  sliderEnabled = false;
+  updateButtons();
+});
+$("btnParamClose").addEventListener("click", () => {
+  if (document.activeElement) document.activeElement.blur();
+  paramsVisible = false;
+  speedVisible = false; setBg($("btnGraph"), COL.Gray);
+  go();
 });
 
-// Curseur : glisser le pouce, double-clic = 3 L
+// Curseur : glisser le pouce, double-clic = milieu de la plage (3 L par défaut)
 (() => {
   const th = $("thumb"); let drag = null;
   th.addEventListener("pointerdown", (e) => {
@@ -512,11 +535,9 @@ $("btnParam").addEventListener("click", () => {
   th.addEventListener("pointermove", (e) => { if (drag !== null && sliderEnabled) { setOffset(sliderValueAt(e.clientY, drag)); dirty = true; } });
   th.addEventListener("pointerup", () => { drag = null; });
   th.addEventListener("pointercancel", () => { drag = null; });
-  $("slider").addEventListener("dblclick", () => { if (sliderEnabled) setOffset((4.5 - 1.5) / 2 + 1.5); });
+  $("slider").addEventListener("dblclick", () => { if (sliderEnabled) setOffset((model.OffsetMin + model.OffsetMax) / 2); });
 })();
 
-// Ajout web : un onglet masqué met la simulation en pause (le pas de temps réel deviendrait énorme).
-document.addEventListener("visibilitychange", () => { if (document.hidden) setIsPause(false); });
 
 // ---------- démarrage (OnLoaded -> Go) ----------
 layout();

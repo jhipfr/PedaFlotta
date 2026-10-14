@@ -31,13 +31,13 @@ class Model {
     // Paramètres modifiables (valeurs par défaut de Model.cs)
     this._pressionGonflage = 200;   // bars
     this._volumeBouteille = 15;     // Litre
-    this._massePlongeur = 81;       // kg
+    this._massePlongeur = 77;       // kg (V2.6 : 81 ; demandé : 77)
     this.VolumePlongeur = 77;       // L
     this.LestPlongeur = 4;          // kg
     this.CoefficientFrottement = 5;
     this.CoefficientFrottementVisqueux = 8;
     this.AmplitudeRespirationNominal = 0.5; // L
-    this.VolumeMaxPoumon = 5;       // L (sert uniquement à l'échelle de l'oscilloscope)
+    this.VolumeMaxPoumon = 5;       // L : échelle de l'oscilloscope et volume pulmonaire maximal
     this.PeriodeRespiration = 15;   // cycles par minute
     this.DureeTransitionSport = 1;  // s
     this.VitesseDeRemplissage = 200; // L/min
@@ -85,10 +85,13 @@ class Model {
     }
   }
   // Poumon de 5L avec volume mort de 1 Litre
+  // Plage du volume moyen : [1 L + amplitude ; VolumeMaxPoumon - amplitude] (V2.6 : [1,5 ; 4,5] en dur)
+  get OffsetMin() { return 1 + this.AmplitudeRespirationNominal; }
+  get OffsetMax() { return Math.max(this.OffsetMin, this.VolumeMaxPoumon - this.AmplitudeRespirationNominal); }
   get OffsetRespiration() { return this._offsetRespiration; }
   set OffsetRespiration(v) {
     if (v !== this._offsetRespiration) {
-      this._offsetRespiration = Math.max(Math.min(v, 4.5), 1.5);
+      this._offsetRespiration = Math.max(Math.min(v, this.OffsetMax), this.OffsetMin);
     }
   }
   get PressionGonflage() { return this._pressionGonflage; }
@@ -100,16 +103,15 @@ class Model {
 
   initModel() {
     this.Expiration = false;
-    this.VolumeBouteille = 15;   // Litre  (NB : écrase la valeur saisie dans les paramètres, comme l'original)
+    // VolumeBouteille et PressionGonflage ne sont plus réinitialisés ici : les valeurs des paramètres sont prises en compte.
     this.DensiteAir = 0.0012;    // kgs/L
-    this.PressionGonflage = 200; // bars   (NB : idem)
     this.PoidsAirBloc = this.PressionGonflage * this.VolumeBouteille * this.DensiteAir;
     this.VolumeCombinaison = 10;          // Litre
     this.CompressionNeopreneParBar = 10;  // % par bar
     this.ChronoInflateur = new Stopwatch();
     this.ChronoPurge = new Stopwatch();
     this.ChronoPurgeRapide = new Stopwatch();
-    this.OffsetRespiration = 3;
+    this.OffsetRespiration = (this.OffsetMin + this.OffsetMax) / 2; // 3 L avec les valeurs par défaut
     this.time = -16;
     this.TransitionSport = 0;
     this.PressionAbsolue = 1;
@@ -140,7 +142,7 @@ class Model {
 
   volumePoumon(time) {
     this.VolumePoumonInstant = this.AmplitudeRespiration * Math.sin(time * this.PeriodeRespiration / 60 * 2 * Math.PI) + this.OffsetRespiration;
-    this.VolumePoumonInstant = Math.min(this.VolumePoumonInstant, 5);
+    this.VolumePoumonInstant = Math.min(this.VolumePoumonInstant, this.VolumeMaxPoumon);
     this.VolumePoumonInstant = Math.max(this.VolumePoumonInstant, 1);
     const m = time % (60 / this.PeriodeRespiration); // même sémantique que % en C# (signe du dividende)
     this.Expiration = !(m < 4 && m > 2);
@@ -187,9 +189,10 @@ class Model {
       if (cs[0].time < this.time - this.LargeurScope) cs.shift(); else break;
     }
 
+    // Seule la moitié du volume pulmonaire est comptée dans la poussée (demande de J. Honvault).
     // Inventaire des forces projetées sur un axe Z orienté vers le haut.
     this.MasseApparentePlongeur = (this.MassePlongeur + this.LestPlongeur + this.PoidsAirBloc)
-      - (this.FlottaCombi + this.VolumePoumonInstant + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
+      - (this.FlottaCombi + this.VolumePoumonInstant / 2 + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
     const absZP = Math.abs(this.ZP);
     this.ResistanceHydroDynamique = -Math.sign(this.ZP) * (absZP * (this.CoefficientFrottementVisqueux + absZP * this.CoefficientFrottement));
     // Principe fondamental de la dynamique. ici l'accélération (Z dérivée 2 fois)
