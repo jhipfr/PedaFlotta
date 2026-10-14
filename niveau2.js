@@ -106,6 +106,9 @@ function pas(dt) {
   }
   // bulles du détendeur pendant l'expiration
   if (lui.Expiration && Math.random() < 6 * dt) bulles.push({ x: (Math.random() - 0.5) * 0.6, y: 0.55, r: 0.05 + Math.random() * 0.06 });
+  // chapelet de bulles de sa purge, à son épaule (tirette en -1,25R ; 1,6R du centre de la tête), s'il reste de l'air
+  if (lui.IsPurge && lui.VolumeNormoLitresGilet > 0 && Math.random() < 30 * dt)
+    bulles.push({ x: -1.25 + (Math.random() - 0.5) * 0.1, y: 1.5, r: 0.03 + Math.random() * 0.05 });
   for (const b of bulles) { b.y -= 2.5 * dt; b.x += (Math.random() - 0.5) * 0.02; }
   bulles = bulles.filter((b) => b.y > -6);
   if (etat === "plongee" && moi.Profondeur <= 0) {
@@ -396,10 +399,33 @@ function dessinerBinome(cx, hy, R, colG) {
 
 // ---------- commandes (multi-touch : un doigt par bouton) ----------
 const appuis = new Map(); // pointerId -> bouton
+
+// son de l'inflateur (mon inflateur ou le sien), joué en boucle tant qu'on appuie
+let audio = null, sonBuffer = null, sonSource = null, sonGain = null;
+function initSon() {
+  if (audio) return;
+  try {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    fetch("son/inflateur.mp3").then((r) => r.arrayBuffer()).then((a) => audio.decodeAudioData(a)).then((b) => { sonBuffer = b; majSon(); }).catch(() => {});
+  } catch (e) { audio = null; }
+}
+function majSon() {
+  const actif = moi.IsInflateur || lui.IsInflateur;
+  if (actif && !sonSource && audio && sonBuffer) {
+    if (audio.state === "suspended") audio.resume();
+    sonGain = audio.createGain(); sonGain.gain.setValueAtTime(0, audio.currentTime); sonGain.gain.linearRampToValueAtTime(1, audio.currentTime + 0.03);
+    sonSource = audio.createBufferSource(); sonSource.buffer = sonBuffer; sonSource.loop = true; sonSource.loopStart = 0.5; sonSource.loopEnd = 7.5;
+    sonSource.connect(sonGain).connect(audio.destination); sonSource.start();
+  } else if (!actif && sonSource) {
+    sonGain.gain.setValueAtTime(sonGain.gain.value, audio.currentTime); sonGain.gain.linearRampToValueAtTime(0, audio.currentTime + 0.08);
+    sonSource.stop(audio.currentTime + 0.1); sonSource = null;
+  }
+}
 function aPos(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) / r.height * 1000, y: (e.clientY - r.top) / r.height * 1000 }; }
 function cible(p) { return boutons.find((b) => p.x >= b.x && p.x <= b.x + b.w && p.y >= b.y && p.y <= b.y + b.h); }
 cv.addEventListener("pointerdown", (e) => {
   e.preventDefault();
+  initSon(); // le navigateur n'autorise le son qu'après un geste de l'utilisateur
   const b = cible(aPos(e));
   if (b && b.id === "niveau") { if (b.n !== NIV) location.href = b.n === 1 ? "index.html" : "niveau" + b.n + ".html"; return; }
   if (!b) return;
@@ -411,9 +437,9 @@ cv.addEventListener("pointerdown", (e) => {
   }
   if (etat === "plongee" && b.m) {
     if (NIV === 4 && b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= nbGonflages === 2 ? 50 : 200;
-    b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
+    b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); majSon(); }
 });
-function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
+function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); majSon(); } }
 // curseur poumon : glisser pour régler le volume pulmonaire moyen (haut = OffsetMax)
 const curseurs = new Map();
 function reglerPoumon(b, y) {
@@ -424,7 +450,7 @@ cv.addEventListener("pointermove", (e) => { const b = curseurs.get(e.pointerId);
 cv.addEventListener("pointerup", relacher);
 cv.addEventListener("pointercancel", relacher);
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
-function relacherTout() { appuis.clear(); for (const m of [moi, lui]) m.IsInflateur = m.IsPurge = false; }
+function relacherTout() { appuis.clear(); for (const m of [moi, lui]) m.IsInflateur = m.IsPurge = false; majSon(); }
 // molette : mon volume pulmonaire moyen (±0,1 L), comme le niveau 1
 cv.addEventListener("wheel", (e) => { e.preventDefault(); moi.OffsetRespiration += e.deltaY < 0 ? 0.1 : -0.1; }, { passive: false });
 
