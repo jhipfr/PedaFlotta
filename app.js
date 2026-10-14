@@ -280,10 +280,12 @@ function addMarker(seconds, debit, color) {
   LastEtiquette = xPlongeur;
 }
 
-// Score = intégrale de l'écart au profil guide, en mètres x secondes (V2.6 : somme d'écarts en pixels par tick).
+// Score : 100 points par seconde à moins de 5 cm du profil guide, puis 1 point de moins par seconde
+// pour chaque tranche de 5 cm d'écart (250 cm d'écart -> 50 points/s, 5 m et plus -> 0).
 const PX_PAR_M = TH / 35;
 function calculScore(i, j, dt) {
-  score += Math.abs(regLin(i, j) - traj[i].y) / PX_PAR_M * dt;
+  const ecartCm = Math.abs(regLin(i, j) - traj[i].y) / PX_PAR_M * 100;
+  score += Math.max(0, 100 - Math.floor(ecartCm / 5)) * dt;
   $("scoreLbl").textContent = "Score : \n" + score.toFixed(0);
 }
 function regLin(i, j) {

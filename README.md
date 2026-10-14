@@ -29,11 +29,12 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 - **Masse du plongeur** : 77 kg par défaut (81 kg dans la V2.6).
 - **Volume Max Poumon** : il règle l'échelle de l'oscilloscope et le volume pulmonaire maximal. Le curseur va de 1 L + amplitude à Volume Max − amplitude (1,5 à 4,5 L par défaut, comme avant).
 - **Taille Bloc et Pression Initiale** : elles sont prises en compte. Le poids d'air initial vaut pression × volume × 0,0012 kg/L.
+- **Poumons** : le volume du plongeur inclut la moitié du volume pulmonaire maximal. Seul l'écart du volume instantané à cette moitié s'ajoute à la poussée, à 100 %.
 - **Combinaison** : volume paramétrable (6 L par défaut, 10 L en dur dans la V2.6). Un troisième oscilloscope (orange) montre son volume de flottaison, qui diminue avec la profondeur (10 % par bar).
 - **Paramètres** : le panneau couvre tout l'écran et arrête la simulation. Le bouton « Valider » le ferme et relance la plongée (Restart).
 - **Écrans plus hauts que 16:9** (4:3, 16:10…) : le ciel est agrandi au lieu d'afficher des bandes noires. Sur un écran plus large, il reste des bandes sur les côtés.
 - **Horloge** : la simulation avance par pas fixes de 10 ms, rattrapés sur l'horloge réelle. Le résultat ne dépend plus de la fréquence d'affichage. Si l'onglet est masqué ou l'appareil en veille, la simulation reprend sans saut.
-  - Score = intégrale de l'écart au profil guide, **en mètres × secondes** (la V2.6 additionnait des pixels à chaque tick). Les scores ne sont donc pas comparables à ceux de l'.exe.
+  - Score : 100 points par seconde à moins de 5 cm du profil guide, puis 1 point de moins par seconde par tranche de 5 cm d'écart (250 cm → 50 points/s, 5 m ou plus → 0). Un parcours parfait de 6 min vaut 36 000 points.
   - Bulles : 5 par seconde en moyenne pendant l'expiration, montée de 15 px/s, grossissement de 1 px/s (valeurs V2.6 par tick ramenées à la seconde).
 - **Fonds** : image de sable (rides, galets, algues) et ciel avec nuages légers (`img/sable.png`, `img/ciel.png`, dessinés pour le projet). En portrait, le sable défile avec le plongeur et les nuages plus lentement.
 - **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus.

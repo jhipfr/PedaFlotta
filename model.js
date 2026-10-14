@@ -189,9 +189,11 @@ class Model {
       if (cs[0].time < this.time - this.LargeurScope) cs.shift(); else break;
     }
 
+    // VolumePlongeur inclut déjà la moitié du volume pulmonaire maximal : seul l'écart à cette moitié
+    // s'ajoute (variation prise à 100 %).
     // Inventaire des forces projetées sur un axe Z orienté vers le haut.
     this.MasseApparentePlongeur = (this.MassePlongeur + this.LestPlongeur + this.PoidsAirBloc)
-      - (this.FlottaCombi + this.VolumePoumonInstant + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
+      - (this.FlottaCombi + (this.VolumePoumonInstant - this.VolumeMaxPoumon / 2) + this.VolumeFlottaisonDuGilet + this.VolumePlongeur) * this.DensiteEau;
     const absZP = Math.abs(this.ZP);
     this.ResistanceHydroDynamique = -Math.sign(this.ZP) * (absZP * (this.CoefficientFrottementVisqueux + absZP * this.CoefficientFrottement));
     // Principe fondamental de la dynamique. ici l'accélération (Z dérivée 2 fois)
