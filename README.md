@@ -86,6 +86,6 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 4. Le site est en ligne après une minute environ, à l'adresse `https://<compte>.github.io/PedaFlotta/`.
 5. Pour l'utiliser hors ligne : ouvrir le site une fois en ligne. Ensuite, dans Chrome ou Edge, le bouton « Installer » de la barre d'adresse permet de le lancer comme une application.
 
-À chaque nouvelle version, modifier `CACHE` dans `sw.js` (par exemple `-2`) pour que les postes déjà installés récupèrent la mise à jour.
+Le service worker fonctionne en « réseau d'abord » : en ligne, la dernière version publiée est toujours chargée (et mise en cache) ; hors ligne, la copie en cache est servie. Modifier `CACHE` dans `sw.js` à chaque version reste conseillé pour purger les anciens fichiers.
 
 Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode installable demande en revanche http(s), par exemple `python -m http.server` dans ce dossier.
