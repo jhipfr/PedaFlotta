@@ -29,10 +29,11 @@ let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de d
 const DEMI_VIE_V = 1;        // s
 let traj = [];               // trajectoire réelle {t, d}, un point toutes les 0,2 s
 let profil = [];             // profil de remontée cible {t, d}
+let tSurfaceProfil = 0;      // date d'arrivée en surface prévue par le profil (s)
 const DECOMPTE = 5;          // s de décompte au départ
 
 // Profil cible : décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite,
-// palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface.
+// palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface, où il reste jusqu'à la fin du bandeau (4 min).
 function construireProfil(D) {
   const pts = [{ t: 0, d: D }, { t: DECOMPTE, d: D }];
   let t = DECOMPTE, d = D;
@@ -41,6 +42,8 @@ function construireProfil(D) {
   vers(3, 5);
   if (D >= 3) { t += 30; pts.push({ t, d }); }
   vers(0, 5);
+  tSurfaceProfil = t;
+  if (t < DUREE_MAX) pts.push({ t: DUREE_MAX, d: 0 });
   return pts;
 }
 
@@ -97,7 +100,7 @@ function pas(dt) {
   for (const b of bulles) { b.y -= 2.5 * dt; b.x += (Math.random() - 0.5) * 0.02; }
   bulles = bulles.filter((b) => b.y > -6);
   if (etat === "plongee" && moi.Profondeur <= 0) {
-    const retard = moi.time - profil[profil.length - 1].t; // rien si on arrive trop tôt
+    const retard = moi.time - tSurfaceProfil; // rien si on arrive trop tôt
     bonusSurface = retard >= 0 ? Math.max(0, 100 - 2 * retard) : 0;
     score += bonusSurface;
     etat = "fin"; relacherTout();
@@ -149,7 +152,8 @@ function dessiner() {
   for (const p of particules) { ctx.beginPath(); ctx.arc(p.x * LW, p.y, p.r, 0, 2 * Math.PI); ctx.fill(); }
 
   // le plongeur face à nous
-  const zone = LW - jaugeW - 20;
+  const curW = portrait ? 46 : 64; // curseur poumon ballast, à droite
+  const zone = LW - jaugeW - curW - 20;
   const R = Math.min(220, zone * (portrait ? 0.3 : 0.4)); // plongeur proche
   const cx = jaugeW + 10 + zone / 2;
   const e = clamp(ecartAff / ECART_MAX, -1, 1);   // -1 : lui plus léger ; +1 : lui plus lourd
@@ -166,8 +170,8 @@ function dessiner() {
   ord.x = jaugeW + 8; ord.y = BH + 8;
   const mh = portrait ? 100 : 120, mw = portrait ? 140 : 220; // mes boutons, en bas
   const yMin = BH + (portrait ? 210 : 230), yMax = LH - mh - bh - 30; // entre l'ordinateur / Paramètres et mes boutons
-  const bx1 = clamp(cx - 1.9 * R - bw, jaugeW + 5, LW - bw - 5);
-  const bx2 = clamp(cx + 1.75 * R, jaugeW + 5, LW - bw - 5);
+  const bx1 = clamp(cx - 1.9 * R - bw, jaugeW + 5, LW - curW - bw - 10);
+  const bx2 = clamp(cx + 1.75 * R, jaugeW + 5, LW - curW - bw - 10);
   const by1 = clamp(hy + 1.6 * R - bh / 2, yMin, yMax), by2 = clamp(hy + 0.25 * R - bh / 2, yMin, yMax);
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
   ctx.beginPath(); ctx.moveTo(bx1 + bw, by1 + bh / 2); ctx.lineTo(cx - 1.25 * R, hy + 1.6 * R);
@@ -178,6 +182,22 @@ function dessiner() {
   // mes commandes : inflateur en bas à gauche, purge en bas à droite
   bouton("monInfl", "Mon inflateur", jaugeW + 10, LH - mh - 10, mw, mh, "#FFC0CB", moi, "IsInflateur");
   bouton("maPurge", "Ma purge", LW - mw - 10, LH - mh - 10, mw, mh, "#E070E0", moi, "IsPurge");
+
+  // curseur « poumon ballast » à droite : mon volume pulmonaire moyen (comme le niveau 1)
+  {
+    const sx = LW - curW - 4, sy = BH + (portrait ? 200 : 220), sh = LH - mh - 30 - sy;
+    const gt = ctx.createLinearGradient(sx, 0, sx + curW, 0);
+    gt.addColorStop(0, "#888"); gt.addColorStop(0.5, "#ccc"); gt.addColorStop(1, "#888");
+    ctx.fillStyle = gt; ctx.strokeStyle = "#333"; ctx.lineWidth = 2; rrect(sx, sy, curW, sh, 8); ctx.fill(); ctx.stroke();
+    const th = portrait ? 46 : 54, f = (moi.OffsetRespiration - moi.OffsetMin) / Math.max(0.01, moi.OffsetMax - moi.OffsetMin);
+    const ty = sy + (1 - f) * (sh - th);
+    ctx.fillStyle = "#00BFFF"; ctx.strokeStyle = "#000"; rrect(sx - 4, ty, curW + 8, th, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#000"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = `bold ${portrait ? 18 : 22}px ${FONT}`;
+    ctx.fillText(moi.OffsetRespiration.toFixed(2), sx + curW / 2, ty + th / 2);
+    ctx.fillStyle = "#fff"; ctx.textBaseline = "bottom"; ctx.font = `bold ${portrait ? 14 : 18}px ${FONT}`;
+    ctx.fillText("Poumon", sx + curW / 2, sy - 4);
+    boutons.push({ id: "poumon", x: sx - 10, y: sy, w: curW + 20, h: sh, sy: sy + th / 2, sh: sh - th });
+  }
 
   // jauge de vitesse tout à gauche (couleurs et échelle ±30 m/min du niveau 1)
   {
@@ -213,7 +233,7 @@ function dessiner() {
   const ymid = (BH + LH) / 2;
   if (etat === "attente") { bandeau(portrait ? ["Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, ymid - (portrait ? 110 : 90)); boutonGo(cx, ymid); }
   if (etat === "fin" && gameOver) { bandeau(["GAME OVER", "Pas en surface à 4 min", "Score " + score.toFixed(0)], cx, ymid - 130); boutonGo(cx, ymid); }
-  else if (etat === "fin") { bandeau(["Score " + score.toFixed(0), "Surface en " + ts + " (profil " + Math.round(profil[profil.length - 1].t) + " s)",
+  else if (etat === "fin") { bandeau(["Score " + score.toFixed(0), "Surface en " + ts + " (profil " + Math.round(tSurfaceProfil) + " s)",
     "Bonus surface +" + bonusSurface.toFixed(0), "Vitesse max " + vMax.toFixed(0) + " m/min"], cx, ymid - 150); boutonGo(cx, ymid); }
 }
 
@@ -364,6 +384,7 @@ cv.addEventListener("pointerdown", (e) => {
   const b = cible(aPos(e));
   if (b && b.id === "niveau1") { location.href = "index.html"; return; }
   if (!b) return;
+  if (b.id === "poumon") { curseurs.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); reglerPoumon(b, aPos(e).y); return; }
   if (b.id === "param") { ouvrirParams(); return; }
   if (b.id === "go") {
     if (etat === "fin") nouvellePartie();
@@ -373,7 +394,14 @@ cv.addEventListener("pointerdown", (e) => {
     if (b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= 10; // gonflages : le premier est gratuit
     b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
 });
-function relacher(e) { const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
+function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
+// curseur poumon : glisser pour régler le volume pulmonaire moyen (haut = OffsetMax)
+const curseurs = new Map();
+function reglerPoumon(b, y) {
+  const f = clamp(1 - (y - b.sy) / b.sh, 0, 1);
+  moi.OffsetRespiration = Math.round((moi.OffsetMin + f * (moi.OffsetMax - moi.OffsetMin)) * 10) / 10;
+}
+cv.addEventListener("pointermove", (e) => { const b = curseurs.get(e.pointerId); if (b) reglerPoumon(b, aPos(e).y); });
 cv.addEventListener("pointerup", relacher);
 cv.addEventListener("pointercancel", relacher);
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
