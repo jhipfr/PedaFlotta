@@ -69,6 +69,9 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 - Paramètres : profondeur de départ (20 m par défaut), masse, volume et lest de chacun des deux plongeurs.
 - Au départ, les deux plongeurs sont équilibrés à la profondeur choisie (gilets gonflés juste ce qu'il faut). Le bouton **Go** lance la remontée.
 - Son image monte ou descend selon l'écart de flottabilité (lui − moi), lissé sur 0,5 s : 2 kg plus léger que moi, son front sort par le haut ; 2 kg plus lourd, on ne voit que le haut de sa tête. Ses boutons restent à l'écran pour rester utilisables.
+- Plongeur vu de près (tête de rayon 220 px logiques, deux fois le premier prototype).
+- Bandeau du haut : profil de remontée cible (rouge) et trajectoire réelle (blanc). Profil : 5 s de décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite, palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface.
+- Vitesse affichée (texte et jauge) filtrée par un passe-bas du premier ordre de demi-vie 1 s.
 - Molette : mon volume pulmonaire moyen. Multi-touch : on peut appuyer sur deux boutons à la fois.
 - Fin à la surface : durée, vitesse maximale et temps passé au-dessus de la zone verte (4,8 m/min).
 
