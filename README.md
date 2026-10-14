@@ -12,6 +12,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 | `portrait.js` | Mode téléphone vertical | nouveau |
 | `niveau2.html`, `niveau2.js` | Niveau 2 : remontée assistée | nouveau |
 | `niveau3.html` | Niveau 3 : même jeu depuis 40 m (charge `niveau2.js` avec `NIVEAU = 3`) | nouveau |
+| `niveau4.html` | Niveau 4 : niveau 3 avec pénalités de gonflage (`NIVEAU = 4`) | nouveau |
 | `index.html`, `style.css` | Page et styles | `MainWindow.xaml`, `App.xaml` |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Mode hors ligne / installation | nouveau |
 | `img/plongeur.png`, `img/Souris.png` | Images | `Resources/` |
@@ -95,5 +96,10 @@ Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode insta
 
 - `niveau3.html`, même code que le niveau 2. Départ à 40 m (réglable jusqu'à 45 m, le fond), profil : 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, puis comme le niveau 2 (5 m/min, palier de 30 s à 3 m). Arrivée en surface prévue à 305 s.
 - Alarme de vitesse : 20 m/min au-delà de 30 m, 10 m/min de 30 à 10 m, 5 m/min ensuite. Bandeau de 6 min ; game over si pas en surface à 6 min (valeur choisie : le profil seul dure 5 min 05).
-- Liens « Niveau 3 → » sous « ← Niveau 1 » au niveau 2, « ← Niveau 2 » au niveau 3.
+- Choix du niveau (1 à 4, le niveau en cours en jaune) sous Paramètres, aux niveaux 2, 3 et 4.
 - `model.js` : le fond (sable) est réglable (`ProfondeurFond`, 25 m par défaut).
+
+## Niveau 4 : remontée assistée depuis 40 m, gonflages pénalisés
+
+- `niveau4.html` : le niveau 3 (même profil, même bandeau de 6 min), plus une pénalité par gonflage (mon inflateur et le sien confondus) : le 1er est gratuit, le 2e coûte −50 points, chacun à partir du 3e −200 points.
+- Les pages chargent leurs scripts avec `?v=N` : un navigateur ne peut plus garder un ancien `niveau2.js` dans son cache HTTP (10 min sur GitHub Pages). Changer N à chaque publication, comme `CACHE` dans `sw.js`.

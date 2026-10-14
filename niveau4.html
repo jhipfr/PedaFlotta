@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<title>PedaFlotta niveau 4</title>
+<meta name="description" content="PedaFlotta niveau 4 : remontée assistée depuis 40 m, gonflages pénalisés">
+<meta name="theme-color" content="#00008B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; touch-action: none;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  canvas { display: block; width: 100vw; height: 100vh; height: 100dvh; }
+  #params { display: none; position: fixed; inset: 0; background: rgba(128,128,128,0.97); z-index: 10;
+    flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+    font: bold 20px 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; touch-action: auto; }
+  #champs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 40px; width: min(1000px, 92vw); }
+  #champs .titre { text-align: center; font-size: 24px; }
+  @media (max-width: 760px) { /* téléphone : une seule colonne, dans l'ordre profondeur, moi, lui */
+    #champs { grid-template-columns: 1fr; }
+    #champs > * { grid-column: auto !important; grid-row: auto !important; }
+    #champs .titre { display: none; }
+  }
+  #champs label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  #champs input { -webkit-user-select: text; user-select: text; width: 110px; font: inherit; padding: 6px; border: 1px solid #ABADB3; }
+  #valider { font: inherit; font-size: 24px; padding: 14px 60px; border: 1px solid #707070; border-radius: 6px;
+    background: linear-gradient(#F3F3F3, #DDD 50%, #CDCDCD); }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="params"><div id="champs"></div><button id="valider">Valider</button></div>
+<script src="model.js?v=27"></script>
+<script>var NIVEAU = 4;</script>
+<script src="niveau2.js?v=27"></script>
+</body>
+</html>

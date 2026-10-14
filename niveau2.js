@@ -5,11 +5,12 @@
 // verticalement : 2 kg plus léger, son front sort par le haut ; 2 kg plus lourd, on ne voit que le haut de sa tête.
 "use strict";
 
-// Niveau 3 : même jeu depuis 40 m (niveau3.html définit NIVEAU = 3 avant de charger ce fichier).
+// Niveau 3 : même jeu depuis 40 m. Niveau 4 : comme le 3, avec pénalités de gonflage.
+// niveau3.html et niveau4.html définissent NIVEAU avant de charger ce fichier.
 const NIV = typeof NIVEAU !== "undefined" ? NIVEAU : 2;
 const STEP = 0.01;           // pas de calcul (s), comme le niveau 1
-let DEPART = NIV === 3 ? 40 : 20; // profondeur de départ (m), réglable dans Paramètres
-const FOND = NIV === 3 ? 45 : 25; // m : profondeur maximale (fond) et maximum du paramètre
+let DEPART = NIV >= 3 ? 40 : 20; // profondeur de départ (m), réglable dans Paramètres
+const FOND = NIV >= 3 ? 45 : 25; // m : profondeur maximale (fond) et maximum du paramètre
 const ECART_MAX = 5;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
 const LISSAGE = 0.5;         // s : constante de temps de l'affichage de l'écart
 const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
@@ -24,8 +25,9 @@ let vMax = 0;                // vitesse de remontée maximale (m/min)
 let tHorsVert = 0;           // temps passé au-dessus de la zone verte (s)
 // Score : -1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite),
 // -10 points par gonflage à partir du deuxième, +100 points à la surface à l'heure du profil, moins 2 points par seconde de retard.
-let score = 0, bonusSurface = 0, gameOver = false;
-const DUREE_MAX = NIV === 3 ? 360 : 240; // s : largeur du bandeau ; game over si pas en surface à 4 min (6 min au niveau 3)
+let score = 0, bonusSurface = 0, gameOver = false, nbGonflages = 0;
+// Niveau 4 : gonflages (mon inflateur et le sien confondus) : 1er gratuit, 2e −50, à partir du 3e −200 chacun.
+const DUREE_MAX = NIV >= 3 ? 360 : 240; // s : largeur du bandeau ; game over si pas en surface à 4 min (6 min aux niveaux 3 et 4)
 const vitesseLimite = (d) => (d > 30 ? 20 : d > 10 ? 10 : 5);
 let particules = [], bulles = [];
 let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de demi-vie 1 s
@@ -65,7 +67,7 @@ function preparer(m) {
 function nouvellePartie() {
   preparer(moi); preparer(lui);
   ecartAff = lui.MasseApparentePlongeur - moi.MasseApparentePlongeur;
-  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false;
+  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false; nbGonflages = 0;
   profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }];
   etat = "attente";
 }
@@ -228,10 +230,15 @@ function dessiner() {
   const pw = portrait ? 150 : 210, py = BH + (portrait ? 90 : 100);
   if (etat !== "plongee") bouton("param", "Paramètres", LW - pw - 10, py, pw, 60, "#DDDDDD");
   ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
-  ctx.fillText("← Niveau 1", LW - 12, py + 72);
-  boutons.push({ id: "niveau1", x: LW - 170, y: py + 62, w: 170, h: 46 });
-  ctx.fillText(NIV === 3 ? "← Niveau 2" : "Niveau 3 →", LW - 12, py + 112);
-  boutons.push({ id: "autreNiveau", x: LW - 170, y: py + 104, w: 170, h: 46 });
+  // choix du niveau : 1 à 4, le niveau en cours en jaune
+  ctx.fillText("Niveau", LW - 12, py + 68);
+  const nb = portrait ? 34 : 40, ng = 6;
+  for (let n = 1; n <= 4; n++) {
+    const x = LW - 12 - (5 - n) * nb - (4 - n) * ng, y = py + (portrait ? 94 : 98);
+    ctx.fillStyle = n === NIV ? "#FFD700" : "rgba(255,255,255,0.85)"; ctx.fillRect(x, y, nb, nb);
+    ctx.fillStyle = "#000"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String(n), x + nb / 2, y + nb / 2 + 1);
+    boutons.push({ id: "niveau", n, x, y, w: nb, h: nb });
+  }
   dessinerProfil(BH, portrait);
   if (etat === "plongee" && moi.time < DECOMPTE) { // décompte
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(cx, LH / 2, 110, 0, 2 * Math.PI); ctx.fill();
@@ -240,7 +247,7 @@ function dessiner() {
   }
 
   const ymid = (BH + LH) / 2;
-  if (etat === "attente") { bandeau(portrait ? ["Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, ymid - (portrait ? 110 : 90)); boutonGo(cx, ymid); }
+  if (etat === "attente") { bandeau(portrait ? ["Niveau " + NIV, "Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Niveau " + NIV + " : remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, ymid - (portrait ? 110 : 90)); boutonGo(cx, ymid); }
   if (etat === "fin" && gameOver) { bandeau(["GAME OVER", "Pas en surface à " + DUREE_MAX / 60 + " min", "Score " + score.toFixed(0)], cx, ymid - 130); boutonGo(cx, ymid); }
   else if (etat === "fin") { bandeau(["Score " + score.toFixed(0), "Surface en " + ts + " (profil " + Math.round(tSurfaceProfil) + " s)",
     "Bonus surface +" + bonusSurface.toFixed(0), "Vitesse max " + vMax.toFixed(0) + " m/min"], cx, ymid - 150); boutonGo(cx, ymid); }
@@ -280,7 +287,7 @@ function dessinerOrdinateur(x, y, w, h, ts) {
 function dessinerProfil(BH, portrait) {
   ctx.fillStyle = "rgba(0,0,0,0.45)"; ctx.fillRect(0, 0, LW, BH); // transparent : on voit le plongeur dessous
   ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = `bold ${portrait ? 18 : 22}px ${FONT}`;
-  const titre = NIV === 3
+  const titre = NIV >= 3
     ? (portrait ? "20 m/min → 30 m, 10 → 10 m, 5, palier 3 m" : "Profil : 20 m/min jusqu'à 30 m, 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m")
     : (portrait ? "10 m/min → 10 m, 5 m/min, palier 30 s à 3 m" : "Profil : 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m");
   ctx.fillText(titre, 10, 6);
@@ -394,8 +401,7 @@ function cible(p) { return boutons.find((b) => p.x >= b.x && p.x <= b.x + b.w &&
 cv.addEventListener("pointerdown", (e) => {
   e.preventDefault();
   const b = cible(aPos(e));
-  if (b && b.id === "niveau1") { location.href = "index.html"; return; }
-  if (b && b.id === "autreNiveau") { location.href = NIV === 3 ? "niveau2.html" : "niveau3.html"; return; }
+  if (b && b.id === "niveau") { if (b.n !== NIV) location.href = b.n === 1 ? "index.html" : "niveau" + b.n + ".html"; return; }
   if (!b) return;
   if (b.id === "poumon") { curseurs.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); reglerPoumon(b, aPos(e).y); return; }
   if (b.id === "param") { ouvrirParams(); return; }
@@ -404,6 +410,7 @@ cv.addEventListener("pointerdown", (e) => {
     etat = "plongee"; precedent = performance.now(); accu = 0; return;
   }
   if (etat === "plongee" && b.m) {
+    if (NIV === 4 && b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= nbGonflages === 2 ? 50 : 200;
     b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
 });
 function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
