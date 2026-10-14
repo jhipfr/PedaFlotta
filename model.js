@@ -44,6 +44,7 @@ class Model {
     this.VitesseDePurge = 200;       // L/min
     this.VitesseDePurgeRapide = 400; // L/min
     this.VolumeMaxDuGilet = 20;      // L
+    this.VolumeCombinaison = 6;      // L (V2.6 : 10 L en dur ; paramétrable, 6 L par défaut)
 
     // Paramètres affichages
     this.Filtrage = 0.05;            // (coefficient du filtre de l'oscilloscope gilet)
@@ -106,7 +107,6 @@ class Model {
     // VolumeBouteille et PressionGonflage ne sont plus réinitialisés ici : les valeurs des paramètres sont prises en compte.
     this.DensiteAir = 0.0012;    // kgs/L
     this.PoidsAirBloc = this.PressionGonflage * this.VolumeBouteille * this.DensiteAir;
-    this.VolumeCombinaison = 10;          // Litre
     this.CompressionNeopreneParBar = 10;  // % par bar
     this.ChronoInflateur = new Stopwatch();
     this.ChronoPurge = new Stopwatch();
@@ -125,7 +125,7 @@ class Model {
     this.CollectionSample = [];
     for (let i = 0; i < this.LargeurScope / this.PeriodeEchantillonnage; i++) {
       this.volumePoumon(this.time);
-      this.CollectionSample.push({ time: this.time, poumon: this.VolumePoumonInstant, gilet: this.VolumeNormoLitresGilet });
+      this.CollectionSample.push({ time: this.time, poumon: this.VolumePoumonInstant, gilet: this.VolumeNormoLitresGilet, combi: this.VolumeCombinaison });
       this.time += this.PeriodeEchantillonnage;
     }
     // Profil guide : X en s, Y en m
@@ -184,7 +184,7 @@ class Model {
 
     const cs = this.CollectionSample;
     cs.push({ time: this.time, poumon: this.VolumePoumonInstant,
-      gilet: cs[cs.length - 1].gilet * this.Filtrage + (1 - this.Filtrage) * this.VolumeFlottaisonDuGilet });
+      gilet: cs[cs.length - 1].gilet * this.Filtrage + (1 - this.Filtrage) * this.VolumeFlottaisonDuGilet, combi: this.FlottaCombi });
     for (let i = 0; i < cs.length - 1; i++) { // on efface les points qui sortent de la fenêtre des oscilloscopes.
       if (cs[0].time < this.time - this.LargeurScope) cs.shift(); else break;
     }

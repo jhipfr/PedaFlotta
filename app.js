@@ -17,10 +17,12 @@ const TVH = 6 * H / 7;                   // CanvasTrajVitesse (RowSpan 2)
 const GAUGE = { x: 0, y: R, w: C0, h: 5 * R };          // CanvasVitesse
 const SLIDER = { x: X2, y: R, w: C2, h: 5 * R };        // OffsetPoumonSlider
 const OSC_X = X1 + TW * 16 / 22, OSC_W = TW * 5 / 22;   // grille "f", colonne 1
-const LUNG_CELL = { x: OSC_X, y: 3 * R, w: OSC_W, h: 1.5 * R };
-const GILET_CELL = { x: OSC_X, y: 4.5 * R, w: OSC_W, h: 1.5 * R };
+// Trois oscilloscopes (poumon, gilet, combinaison) dans la zone qui en contenait deux.
+const LUNG_CELL = { x: OSC_X, y: 3 * R, w: OSC_W, h: R };
+const GILET_CELL = { x: OSC_X, y: 4 * R, w: OSC_W, h: R };
+const COMBI_CELL = { x: OSC_X, y: 5 * R, w: OSC_W, h: R };
 const inset = (c, m) => ({ x: c.x + m, y: c.y + m, w: c.w - 2 * m, h: c.h - 2 * m });
-const LUNG = inset(LUNG_CELL, 10), GILET = inset(GILET_CELL, 10);
+const LUNG = inset(LUNG_CELL, 10), GILET = inset(GILET_CELL, 10), COMBI = inset(COMBI_CELL, 10);
 
 const COL = {
   Cyan: "#00FFFF", Beige: "#F5F5DC", Blue: "#0000FF", DarkBlue: "#00008B", Brown: "#A52A2A",
@@ -71,6 +73,7 @@ function layout() {
   place($("lungInfo"), LUNG_CELL.x + 10, LUNG_CELL.y + LUNG_CELL.h * 3 / 4, LUNG_CELL.w - 20, LUNG_CELL.h / 4);
   place($("giletRel"), GILET_CELL.x + 10, GILET_CELL.y + GILET_CELL.h / 2, GILET_CELL.w - 20, GILET_CELL.h / 4);
   place($("giletAbs"), GILET_CELL.x + 10, GILET_CELL.y + GILET_CELL.h * 3 / 4, GILET_CELL.w - 20, GILET_CELL.h / 4);
+  place($("combiInfo"), COMBI_CELL.x + 10, COMBI_CELL.y + COMBI_CELL.h * 3 / 4, COMBI_CELL.w - 20, COMBI_CELL.h / 4);
   const u = (2 * R) / 6, iy = 4 * R;
   place($("profLbl"), X1 + 10, iy + 2 * u, TW * 16 / 22, u);
   place($("massLbl"), X1 + 10, iy + 3 * u, TW * 16 / 22, u);
@@ -181,6 +184,7 @@ function updateLabels() {
   $("lungInfo").firstElementChild.textContent = "V.Instantané : " + fr(model.VolumePoumonInstant, 2) + "L";
   $("blocLbl").firstElementChild.textContent = "Pression : " + fr(model.PressionBloc, 1) + "bars / Poids air : " + fr(model.PoidsAirBloc, 1) + "kgs (accéléré 10x)";
   $("giletAbs").firstElementChild.textContent = "avec " + fr(model.VolumeNormoLitresGilet, 2) + "Normo Litres";
+  $("combiInfo").firstElementChild.textContent = "Combinaison : " + fr(model.FlottaCombi, 2) + "L";
   $("giletRel").firstElementChild.textContent = "Volume du Gilet: " + fr(model.VolumeFlottaisonDuGilet, 2) + "L";
   $("massLbl").firstElementChild.textContent = "Masse apparente : " + fr(model.MasseApparentePlongeur, 2) + "kgs";
   $("profLbl").firstElementChild.textContent = "Profondeur : " + fr(model.Profondeur, 2) + "m";
@@ -378,6 +382,7 @@ function draw() {
     scope(LUNG, model.CollectionSample.map((s) => s.poumon), model.VolumeMaxPoumon, COL.DarkGray, lungGridX);
     const g = giletFlat ? null : model.CollectionSample.map((s) => s.gilet);
     scope(GILET, g, model.VolumeMaxDuGilet, COL.Purple, giletGridX);
+    scope(COMBI, model.CollectionSample.map((s) => s.combi), Math.max(model.VolumeCombinaison, 0.1), COL.Orange, giletGridX);
   }
 }
 
@@ -408,7 +413,7 @@ function frame(now) {
 // ---------- visibilité des éléments ----------
 function updateButtons() {
   for (const [id, key] of [["btnPurge", "purge"], ["btnRestart", "restart"], ["btnGilet", "gilet"]]) $(id).disabled = !enabled[key];
-  for (const id of ["lungInfo", "giletRel", "giletAbs"]) $(id).style.visibility = oscVisible ? "visible" : "hidden";
+  for (const id of ["lungInfo", "giletRel", "giletAbs", "combiInfo"]) $(id).style.visibility = oscVisible ? "visible" : "hidden";
   $("params").style.visibility = paramsVisible ? "visible" : "hidden";
 }
 function updatePauseBtn() { setBg($("btnPause"), isPause ? COL.LightGray : COL.Lime); }
@@ -432,14 +437,14 @@ function sliderValueAt(clientY, grabDy) {
 // ---------- paramètres ----------
 const PARAMS = [
   [1, "Plongeur", [["Masse Plongeur (kg)", "MassePlongeur"], ["Volume Plongeur (L)", "VolumePlongeur"], ["Lest Plongeur (kg)", "LestPlongeur"],
-    ["CoeffFrottements (N.m-2.s-2)", "CoefficientFrottement"], ["Frottements Visqueux (N.m-2.s-1)", "CoefficientFrottementVisqueux"]]],
+    ["CoeffFrottements (N.m-2.s-2)", "CoefficientFrottement"], ["Frottements Visqueux (N.m-2.s-1)", "CoefficientFrottementVisqueux"], ["Volume Combinaison (L)", "VolumeCombinaison"]]],
   [3, "Respiration", [["Amplitude Respiration Nominal (L)", "AmplitudeRespirationNominal"], ["Volume Max Poumon (L)", "VolumeMaxPoumon"],
     ["Periode Respiration (Cycle/min)", "PeriodeRespiration"], ["Taille Bloc (L)", "VolumeBouteille"], ["Pression Initiale (Bars)", "PressionGonflage"]]],
   [5, "Gilet Stabilisation", [["Volume Max Du Gilet (L)", "VolumeMaxDuGilet"], ["Vitesse De Remplissage (L/min)", "VitesseDeRemplissage"],
     ["Vitesse De Purge (L/min)", "VitesseDePurge"]]],
 ];
 function buildParams() {
-  const p = $("params").firstElementChild, unit = W / 5, rh = 6 * R / 13;
+  const p = $("params").firstElementChild, unit = W / 5, rh = 6 * R / 15;
   const colX = { 1: 0.5 * unit, 3: 2 * unit, 5: 3.5 * unit };
   for (const [col, title, fields] of PARAMS) {
     const mk = (tag, row, cls) => { const e = document.createElement(tag); e.className = cls; place(e, colX[col], row * rh, unit, rh); p.appendChild(e); return e; };

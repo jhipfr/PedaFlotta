@@ -124,15 +124,17 @@ function drawPortrait() {
 
   // oscilloscopes à droite, opacité 50 %
   if (oscVisible) {
-    const w = 400, h = 300, x = sceneW - w - 20;
-    const yl = P_SC / 2 - h - 20, yg = P_SC / 2 + 20;
+    const w = 400, h = 240, x = sceneW - w - 20;
+    const yl = P_SC / 2 - 1.5 * h - 20, yg = P_SC / 2 - h / 2, yc = P_SC / 2 + h / 2 + 20;
     ctx.save(); ctx.globalAlpha = 0.5;
     scope({ x, y: yl, w, h }, model.CollectionSample.map((s) => s.poumon), model.VolumeMaxPoumon, COL.DarkGray, [1, 2, 3, 4].map((i) => w * i / 4));
     scope({ x, y: yg, w, h }, giletFlat ? null : model.CollectionSample.map((s) => s.gilet), model.VolumeMaxDuGilet, COL.Purple, [1, 2, 3, 4].map((i) => w * i / 4));
+    scope({ x, y: yc, w, h }, model.CollectionSample.map((s) => s.combi), Math.max(model.VolumeCombinaison, 0.1), COL.Orange, [1, 2, 3, 4].map((i) => w * i / 4));
     ctx.restore();
     ctx.save(); ctx.globalAlpha = 0.8;
     ptext("Poumon " + fr(model.VolumePoumonInstant, 2) + "L", x + 10, yl + h - 52, COL.Black, 32);
     ptext("Gilet " + fr(model.VolumeFlottaisonDuGilet, 2) + "L", x + 10, yg + h - 52, COL.White, 32);
+    ptext("Combinaison " + fr(model.FlottaCombi, 2) + "L", x + 10, yc + h - 52, COL.Black, 32);
     ctx.restore();
   }
 
