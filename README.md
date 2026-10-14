@@ -110,3 +110,4 @@ Test local sans Internet : double-cliquer sur `index.html` suffit. Le mode insta
 - Son de l'inflateur (`son/inflateur.mp3`, 8 premières secondes du fichier « AIRBlow Fuite d'air » fourni, en mp3 mono 96 kbit/s) : joué en boucle tant qu'on appuie sur mon inflateur ou le sien. Le navigateur n'active le son qu'après un premier appui à l'écran.
 - Palier : à la première arrivée à 3 m, la ligne DURÉE de l'ordinateur devient PALIER sur fond vert et décompte 30 s, puis la durée de plongée revient.
 - Plus de jauge de vitesse à gauche aux niveaux 2 à 4 : la vitesse se lit dans l'ordinateur.
+- Bandeau : chaque appui (mon gonflage rose, ma purge violet, son gonflage orange, sa purge cyan) laisse une barre verticale à sa date de début, large de 1 px par seconde d'appui (1 px minimum). Légende à droite du titre en paysage.

@@ -34,6 +34,8 @@ let tPalier = null;          // date d'arrivée à 3 m (s) : l'ordinateur décom
 let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de demi-vie 1 s
 const DEMI_VIE_V = 1;        // s
 let traj = [];               // trajectoire réelle {t, d}, un point toutes les 0,2 s
+let actions = [];            // gonflages et purges {id, t0, t1} (t1 null tant qu'on appuie), tracés dans le bandeau
+const ACTIONS = { monInfl: ["#FF69B4", "Mon gonflage"], maPurge: ["#B050FF", "Ma purge"], sonInfl: ["#FFA500", "Son gonflage"], saPurge: ["#00E5FF", "Sa purge"] };
 let profil = [];             // profil de remontée cible {t, d}
 let tSurfaceProfil = 0;      // date d'arrivée en surface prévue par le profil (s)
 const DECOMPTE = 5;          // s de décompte au départ
@@ -69,7 +71,7 @@ function nouvellePartie() {
   preparer(moi); preparer(lui);
   ecartAff = lui.MasseApparentePlongeur - moi.MasseApparentePlongeur;
   vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false; nbGonflages = 0; tPalier = null;
-  profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }];
+  profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }]; actions = [];
   etat = "attente";
 }
 
@@ -293,6 +295,20 @@ function dessinerProfil(BH, portrait) {
     ctx.beginPath(); ctx.moveTo(X(t), y0); ctx.lineTo(X(t), y1); ctx.stroke();
     ctx.fillStyle = "#ddd"; ctx.fillText(t / 60 + "min", X(t), y1 + 4);
   }
+  // actions : une barre verticale par appui, à sa date de début, large de 1 px par seconde d'appui (1 px minimum)
+  for (const a of actions) {
+    ctx.fillStyle = ACTIONS[a.id][0];
+    ctx.fillRect(X(a.t0), y0, Math.max(1, (a.t1 === null ? moi.time : a.t1) - a.t0), y1 - y0);
+  }
+  if (!portrait) { // légende à droite du titre
+    ctx.font = `bold 18px ${FONT}`; ctx.textAlign = "right"; ctx.textBaseline = "top";
+    let lx = LW - 12;
+    for (const id of ["saPurge", "sonInfl", "maPurge", "monInfl"]) {
+      const [c, nom] = ACTIONS[id];
+      ctx.fillStyle = "#fff"; ctx.fillText(nom, lx, 9); lx -= ctx.measureText(nom).width + 6;
+      ctx.fillStyle = c; ctx.fillRect(lx - 14, 11, 14, 16); lx -= 34;
+    }
+  }
   ctx.strokeStyle = "#FF3030"; ctx.lineWidth = 4; ctx.beginPath();
   profil.forEach((p, i) => (i ? ctx.lineTo(X(p.t), Y(p.d)) : ctx.moveTo(X(p.t), Y(p.d)))); ctx.stroke();
   ctx.strokeStyle = "#fff"; ctx.lineWidth = 3; ctx.beginPath();
@@ -421,9 +437,10 @@ cv.addEventListener("pointerdown", (e) => {
   }
   if (etat === "plongee" && b.m) {
     if (NIV === 4 && b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= nbGonflages === 2 ? 50 : 200;
-    b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); majSon(); }
+    b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); majSon();
+    b.action = { id: b.id, t0: moi.time, t1: null }; actions.push(b.action); }
 });
-function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); majSon(); } }
+function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); majSon(); if (b.action) b.action.t1 = moi.time; } }
 // curseur poumon : glisser pour régler le volume pulmonaire moyen (haut = OffsetMax)
 const curseurs = new Map();
 function reglerPoumon(b, y) {
@@ -434,7 +451,7 @@ cv.addEventListener("pointermove", (e) => { const b = curseurs.get(e.pointerId);
 cv.addEventListener("pointerup", relacher);
 cv.addEventListener("pointercancel", relacher);
 cv.addEventListener("contextmenu", (e) => e.preventDefault());
-function relacherTout() { appuis.clear(); for (const m of [moi, lui]) m.IsInflateur = m.IsPurge = false; majSon(); }
+function relacherTout() { for (const a of actions) if (a.t1 === null) a.t1 = moi.time; appuis.clear(); for (const m of [moi, lui]) m.IsInflateur = m.IsPurge = false; majSon(); }
 // molette : mon volume pulmonaire moyen (±0,1 L), comme le niveau 1
 cv.addEventListener("wheel", (e) => { e.preventDefault(); moi.OffsetRespiration += e.deltaY < 0 ? 0.1 : -0.1; }, { passive: false });
 
