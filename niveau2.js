@@ -7,7 +7,7 @@
 
 const STEP = 0.01;           // pas de calcul (s), comme le niveau 1
 let DEPART = 20;             // profondeur de départ (m), réglable dans Paramètres
-const ECART_MAX = 3;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
+const ECART_MAX = 5;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
 const LISSAGE = 0.5;         // s : constante de temps de l'affichage de l'écart
 const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
 const fr = (x, d) => x.toFixed(d).replace(".", ",");
@@ -19,6 +19,11 @@ let etat = "attente";        // attente | plongee | fin
 let ecartAff = 0;            // écart lui - moi affiché (kg), lissé
 let vMax = 0;                // vitesse de remontée maximale (m/min)
 let tHorsVert = 0;           // temps passé au-dessus de la zone verte (s)
+// Score : -1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite),
+// -10 points par gonflage à partir du deuxième, +100 points à la surface à l'heure du profil, moins 2 points par seconde de retard.
+let score = 0, nbGonflages = 0, bonusSurface = 0, gameOver = false;
+const DUREE_MAX = 240;       // s : largeur du bandeau ; game over si pas en surface à 4 min
+const vitesseLimite = (d) => (d > 10 ? 10 : 5);
 let particules = [], bulles = [];
 let vAff = 0;                // vitesse affichée (m/min), filtre passe-bas de demi-vie 1 s
 const DEMI_VIE_V = 1;        // s
@@ -53,7 +58,7 @@ function preparer(m) {
 function nouvellePartie() {
   preparer(moi); preparer(lui);
   ecartAff = lui.MasseApparentePlongeur - moi.MasseApparentePlongeur;
-  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0;
+  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; nbGonflages = 0; bonusSurface = 0; gameOver = false;
   profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }];
   etat = "attente";
 }
@@ -80,6 +85,8 @@ function pas(dt) {
   vMax = Math.max(vMax, vAff);
   if (moi.time - traj[traj.length - 1].t >= 0.2) traj.push({ t: moi.time, d: moi.Profondeur });
   if (vAff > 4.8) tHorsVert += dt; // 4,8 m/min : haut de la zone verte de la jauge (comme le niveau 1)
+  const exces = vAff - vitesseLimite(moi.Profondeur);
+  if (exces > 0) score -= exces * dt;
   // particules : immobiles dans l'eau, elles défilent quand on bouge (100 px par mètre)
   for (const p of particules) {
     p.y += zp * 100 * dt;
@@ -89,7 +96,12 @@ function pas(dt) {
   if (lui.Expiration && Math.random() < 6 * dt) bulles.push({ x: (Math.random() - 0.5) * 0.6, y: 0.55, r: 0.05 + Math.random() * 0.06 });
   for (const b of bulles) { b.y -= 2.5 * dt; b.x += (Math.random() - 0.5) * 0.02; }
   bulles = bulles.filter((b) => b.y > -6);
-  if (etat === "plongee" && moi.Profondeur <= 0) { etat = "fin"; relacherTout(); }
+  if (etat === "plongee" && moi.Profondeur <= 0) {
+    const retard = moi.time - profil[profil.length - 1].t; // rien si on arrive trop tôt
+    bonusSurface = retard >= 0 ? Math.max(0, 100 - 2 * retard) : 0;
+    score += bonusSurface;
+    etat = "fin"; relacherTout();
+  } else if (etat === "plongee" && moi.time >= DUREE_MAX) { gameOver = true; etat = "fin"; relacherTout(); }
 }
 
 // ---------- affichage ----------
@@ -142,7 +154,7 @@ function dessiner() {
   const cx = jaugeW + 10 + zone / 2;
   const e = clamp(ecartAff / ECART_MAX, -1, 1);   // -1 : lui plus léger ; +1 : lui plus lourd
   // Centre de la tête (hy) : yeux à hy - 0,08R, menton à hy + 0,9R, front à hy - 0,66R.
-  // Équilibre : yeux au milieu de l'écran entier. -3 kg : menton sous le bandeau. +3 kg : front en bas de l'écran.
+  // Équilibre : yeux au milieu de l'écran entier. -5 kg : menton sous le bandeau. +5 kg : front en bas de l'écran.
   const yHaut = BH - 0.9 * R, yMilieu = LH / 2 + 0.08 * R, yBas = LH + 0.66 * R;
   const hy = e < 0 ? yMilieu + (yMilieu - yHaut) * e : yMilieu + (yBas - yMilieu) * e;
   dessinerBinome(cx, hy, R, jaugeW + 100); // visible aussi à travers le bandeau, dessiné par-dessus en transparence
@@ -153,7 +165,7 @@ function dessiner() {
   const ord = portrait ? { w: 210, h: 150 } : { w: 300, h: 200 }; // ordinateur de plongée, en haut à gauche
   ord.x = jaugeW + 8; ord.y = BH + 8;
   const mh = portrait ? 100 : 120, mw = portrait ? 140 : 220; // mes boutons, en bas
-  const yMin = BH + (portrait ? 170 : 220), yMax = LH - mh - bh - 30; // entre l'ordinateur / Paramètres et mes boutons
+  const yMin = BH + (portrait ? 210 : 230), yMax = LH - mh - bh - 30; // entre l'ordinateur / Paramètres et mes boutons
   const bx1 = clamp(cx - 1.9 * R - bw, jaugeW + 5, LW - bw - 5);
   const bx2 = clamp(cx + 1.75 * R, jaugeW + 5, LW - bw - 5);
   const by1 = clamp(hy + 1.6 * R - bh / 2, yMin, yMax), by2 = clamp(hy + 0.25 * R - bh / 2, yMin, yMax);
@@ -182,11 +194,15 @@ function dessiner() {
   const tt = Math.max(0, moi.time);
   const ts = tt < 60 ? Math.trunc(tt) + "s" : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
   dessinerOrdinateur(ord.x, ord.y, ord.w, ord.h, ts);
-  const pw = portrait ? 150 : 210; // Paramètres et retour au niveau 1, en haut à droite
-  if (etat !== "plongee") bouton("param", "Paramètres", LW - pw - 10, BH + 10, pw, 64, "#DDDDDD");
+  // score en haut à droite, Paramètres et retour au niveau 1 dessous
+  ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right";
+  ctx.font = `bold ${portrait ? 22 : 26}px ${FONT}`; ctx.fillText("Score", LW - 12, BH + 8);
+  ctx.font = `bold ${portrait ? 44 : 56}px ${FONT}`; ctx.fillText(score.toFixed(0), LW - 12, BH + 34);
+  const pw = portrait ? 150 : 210, py = BH + (portrait ? 90 : 100);
+  if (etat !== "plongee") bouton("param", "Paramètres", LW - pw - 10, py, pw, 60, "#DDDDDD");
   ctx.fillStyle = "#fff"; ctx.textBaseline = "top"; ctx.textAlign = "right"; ctx.font = `bold ${portrait ? 20 : 24}px ${FONT}`;
-  ctx.fillText("← Niveau 1", LW - 12, BH + 90);
-  boutons.push({ id: "niveau1", x: LW - 170, y: BH + 80, w: 170, h: 50 });
+  ctx.fillText("← Niveau 1", LW - 12, py + 72);
+  boutons.push({ id: "niveau1", x: LW - 170, y: py + 62, w: 170, h: 46 });
   dessinerProfil(BH, portrait);
   if (etat === "plongee" && moi.time < DECOMPTE) { // décompte
     ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.beginPath(); ctx.arc(cx, LH / 2, 110, 0, 2 * Math.PI); ctx.fill();
@@ -196,8 +212,9 @@ function dessiner() {
 
   const ymid = (BH + LH) / 2;
   if (etat === "attente") { bandeau(portrait ? ["Remontée assistée", "depuis " + fr(DEPART, 0) + " m"] : ["Remontée assistée depuis " + fr(DEPART, 0) + " m"], cx, ymid - (portrait ? 110 : 90)); boutonGo(cx, ymid); }
-  if (etat === "fin") { bandeau(["Surface en " + ts, "Vitesse max " + vMax.toFixed(0) + " m/min",
-    "Au-dessus du vert : " + tHorsVert.toFixed(0) + " s"], cx, ymid - 130); boutonGo(cx, ymid); }
+  if (etat === "fin" && gameOver) { bandeau(["GAME OVER", "Pas en surface à 4 min", "Score " + score.toFixed(0)], cx, ymid - 130); boutonGo(cx, ymid); }
+  else if (etat === "fin") { bandeau(["Score " + score.toFixed(0), "Surface en " + ts + " (profil " + Math.round(profil[profil.length - 1].t) + " s)",
+    "Bonus surface +" + bonusSurface.toFixed(0), "Vitesse max " + vMax.toFixed(0) + " m/min"], cx, ymid - 150); boutonGo(cx, ymid); }
 }
 
 // Ordinateur de plongée (boîtier gris, écran noir) : profondeur, vitesse de remontée, durée.
@@ -219,7 +236,7 @@ function dessinerOrdinateur(x, y, w, h, ts) {
   const dw = ctx.measureText(fr(moi.Profondeur, 1)).width;
   ctx.font = `bold ${14 * u}px ${FONT}`; ctx.fillText("m", sx + 8 * u + dw, sy + 38 * u);
   // alarme du profil : 10 m/min au-delà de 10 m, 5 m/min de 10 m à la surface
-  const v = vAff, limite = moi.Profondeur > 10 ? 10 : 5;
+  const v = vAff, limite = vitesseLimite(moi.Profondeur);
   const col = v >= limite ? "#ff3030" : v > -0.5 ? "#30e030" : "#ffffff";
   ctx.textAlign = "right"; ctx.fillStyle = col; ctx.font = `bold ${26 * u}px ${FONT}`;
   ctx.fillText((v >= 0.5 ? "▲" : v <= -0.5 ? "▼" : "") + Math.abs(v).toFixed(0), sx + sw - 6 * u, sy + 20 * u);
@@ -236,8 +253,8 @@ function dessinerProfil(BH, portrait) {
   ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.font = `bold ${portrait ? 18 : 22}px ${FONT}`;
   ctx.fillText(portrait ? "10 m/min → 10 m, 5 m/min, palier 30 s à 3 m" : "Profil : 10 m/min jusqu'à 10 m, puis 5 m/min, palier de 30 s à 3 m", 10, 6);
   const x0 = portrait ? 50 : 60, x1 = LW - 20, y0 = portrait ? 36 : 42, y1 = BH - 26;
-  const tFin = profil[profil.length - 1].t + 10, D = Math.max(DEPART, 1);
-  const X = (t) => x0 + (x1 - x0) * t / tFin, Y = (d) => y0 + (y1 - y0) * d / D;
+  const tFin = DUREE_MAX, D = Math.max(DEPART, 1); // le bandeau couvre 4 minutes
+  const X = (t) => x0 + (x1 - x0) * t / tFin, Y = (d) => y0 + (y1 - y0) * Math.min(d, D) / D; // plus profond que le départ : bord bas
   ctx.font = `${portrait ? 16 : 18}px ${FONT}`; ctx.textBaseline = "middle"; ctx.textAlign = "right";
   ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 1;
   for (const d of [...new Set([0, 3, 10, DEPART])].filter((d) => d <= DEPART)) {
@@ -245,7 +262,7 @@ function dessinerProfil(BH, portrait) {
     ctx.fillStyle = "#ddd"; ctx.fillText(fr(d, 0) + "m", x0 - 6, Y(d));
   }
   ctx.textAlign = "center"; ctx.textBaseline = "top";
-  for (let t = 60; t < tFin; t += 60) {
+  for (let t = 60; t <= tFin; t += 60) {
     ctx.beginPath(); ctx.moveTo(X(t), y0); ctx.lineTo(X(t), y1); ctx.stroke();
     ctx.fillStyle = "#ddd"; ctx.fillText(t / 60 + "min", X(t), y1 + 4);
   }
@@ -283,6 +300,7 @@ function dessinerBinome(cx, hy, R, colG) {
   // bras (combinaison)
   ctx.strokeStyle = NEO; ctx.lineCap = "round"; ctx.lineWidth = 0.6 * R;
   ctx.beginPath(); ctx.moveTo(cx - 1.4 * R, hy + 1.3 * R); ctx.lineTo(cx - 1.9 * R, hy + 2.8 * R); ctx.lineTo(cx - 1.7 * R, hy + 4.0 * R); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx + 1.4 * R, hy + 1.3 * R); ctx.lineTo(cx + 1.9 * R, hy + 2.8 * R); ctx.lineTo(cx + 1.7 * R, hy + 4.0 * R); ctx.stroke();
   // torse
   ctx.fillStyle = NEO; ctx.beginPath();
   ctx.moveTo(cx - 1.6 * R, hy + 1.0 * R); ctx.lineTo(cx + 1.6 * R, hy + 1.0 * R);
@@ -316,10 +334,10 @@ function dessinerBinome(cx, hy, R, colG) {
   ctx.beginPath(); ctx.moveTo(cx - 0.25 * R, hy + 0.6 * R); ctx.quadraticCurveTo(cx - 0.9 * R, hy + 0.9 * R, cx - 0.6 * R, hy + 1.3 * R); ctx.stroke();
   ctx.fillStyle = "#4a4a4a"; ctx.beginPath(); ctx.arc(cx, hy + 0.58 * R, 0.24 * R, 0, 2 * Math.PI); ctx.fill();
   ctx.fillStyle = "#777"; ctx.beginPath(); ctx.arc(cx, hy + 0.58 * R, 0.12 * R, 0, 2 * Math.PI); ctx.fill();
-  // son bras gauche levé (à droite de l'écran) : il tient l'inflateur au niveau du visage
+  // son inflateur, tenu par MA main droite au niveau de son visage
   const H = { x: cx + 1.45 * R, y: hy + 0.25 * R };
-  ctx.strokeStyle = NEO; ctx.lineCap = "round"; ctx.lineWidth = 0.55 * R;
-  ctx.beginPath(); ctx.moveTo(cx + 1.35 * R, hy + 1.3 * R); ctx.lineTo(cx + 2.0 * R, hy + 1.7 * R); ctx.lineTo(H.x + 0.1 * R, H.y + 0.45 * R); ctx.stroke();
+  ctx.strokeStyle = "#0d0f12"; ctx.lineCap = "round"; ctx.lineWidth = Math.max(40, 0.75 * R); // mon bras droit (combinaison noire)
+  ctx.beginPath(); ctx.moveTo(LW - 60, LH + 80); ctx.quadraticCurveTo(LW - 0.2 * (LW - H.x) - 60, Math.min(LH, H.y + 2.2 * R), H.x + 0.15 * R, H.y + 0.35 * R); ctx.stroke();
   ctx.strokeStyle = "#2a2a2a"; ctx.lineWidth = 0.2 * R; ctx.lineCap = "butt"; // annelé de l'épaule à la main
   ctx.beginPath(); ctx.moveTo(cx + 0.9 * R, hy + 0.95 * R); ctx.quadraticCurveTo(cx + 1.15 * R, hy + 1.0 * R, H.x, H.y + 0.3 * R); ctx.stroke();
   ctx.fillStyle = "#3b3b3b"; rrect(H.x - 0.17 * R, H.y - 0.32 * R, 0.34 * R, 0.62 * R, 0.08 * R); ctx.fill(); // inflateur
@@ -351,7 +369,9 @@ cv.addEventListener("pointerdown", (e) => {
     if (etat === "fin") nouvellePartie();
     etat = "plongee"; precedent = performance.now(); accu = 0; return;
   }
-  if (etat === "plongee" && b.m) { b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
+  if (etat === "plongee" && b.m) {
+    if (b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= 10; // gonflages : le premier est gratuit
+    b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
 });
 function relacher(e) { const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }
 cv.addEventListener("pointerup", relacher);

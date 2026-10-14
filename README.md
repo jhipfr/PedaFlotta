@@ -72,6 +72,9 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 - Plongeur vu de près (tête de rayon 220 px logiques, deux fois le premier prototype).
 - Bandeau du haut : profil de remontée cible (rouge) et trajectoire réelle (blanc). Profil : 5 s de décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite, palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface.
 - Vitesse affichée (texte et jauge) filtrée par un passe-bas du premier ordre de demi-vie 1 s.
+- Son inflateur est tenu par ma main droite (bras en combinaison noire) au niveau de son visage. Butées de l'image à ±5 kg d'écart.
+- Score (en haut à droite) : −1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite, vitesse filtrée) ; −10 points par gonflage à partir du deuxième appui (mon inflateur et le sien confondus) ; à la surface, +100 points si on arrive à l'heure du profil ou après, moins 2 points par seconde de retard, rien si on arrive trop tôt.
+- Le bandeau couvre 4 minutes. Pas en surface à 4 min : game over.
 - Molette : mon volume pulmonaire moyen. Multi-touch : on peut appuyer sur deux boutons à la fois.
 - Fin à la surface : durée, vitesse maximale et temps passé au-dessus de la zone verte (4,8 m/min).
 
