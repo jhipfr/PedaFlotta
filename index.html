@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, viewport-fit=cover">
+<title>PedaFlotta</title>
+<meta name="description" content="Simulateur pédagogique de flottabilité en plongée (portage web de PedaFlotta V2.6)">
+<meta name="theme-color" content="#00008B">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="cv"></canvas>
+
+  <div id="timeCell" class="cell top center"><span id="timeLbl" class="lbl">Sec</span></div>
+  <div id="vitCell" class="cell bottom center"><span id="vitLbl" class="lbl">Vitesse</span></div>
+  <div id="scoreCell" class="cell top right"><span id="scoreLbl" class="lbl m10">Score</span></div>
+  <div id="pbCell" class="cell bottom center"><span class="lbl">Poumon
+Ballast</span></div>
+
+  <div id="lungInfo" class="cell middle left"><span class="lbl" style="color:#000">Sec</span></div>
+  <div id="giletRel" class="cell middle left"><span class="lbl">Sec</span></div>
+  <div id="giletAbs" class="cell middle left"><span class="lbl">Sec</span></div>
+  <div id="profLbl" class="cell middle left"><span class="lbl">Prof</span></div>
+  <div id="massLbl" class="cell middle left"><span class="lbl">Sec</span></div>
+  <div id="blocLbl" class="cell middle left"><span class="lbl">Res</span></div>
+
+  <img id="souris" src="img/Souris.png" alt="Gauche : gilet / Droit : purge / Molette : poumon" draggable="false">
+
+  <div id="slider" class="slider">
+    <div id="thumb"><span id="thumbTxt">3.00</span></div>
+  </div>
+
+  <div id="params" class="params"></div>
+
+  <div id="wRestart" class="btnwrap"><button id="btnRestart" class="btn dflt">Restart</button></div>
+  <div id="wGraph" class="btnwrap"><button id="btnGraph" class="btn dflt">Graphique</button></div>
+  <div id="wPause" class="btnwrap"><button id="btnPause" class="btn">Pause</button></div>
+  <div id="wGilet" class="btnwrap frame" style="background:#FFC0CB"><button id="btnGilet" class="btn dflt">Gilet</button></div>
+  <div id="wPurge" class="btnwrap frame" style="background:#800080"><button id="btnPurge" class="btn dflt">Purge</button></div>
+  <div id="wParam" class="btnwrap"><button id="btnParam" class="btn dflt">Paramètres</button></div>
+</div>
+<script src="model.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
