@@ -31,7 +31,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 - **Volume Max Poumon** : il règle l'échelle de l'oscilloscope et le volume pulmonaire maximal. Le curseur va de 1 L + amplitude à Volume Max − amplitude (1,5 à 4,5 L par défaut, comme avant).
 - **Taille Bloc et Pression Initiale** : elles sont prises en compte. Le poids d'air initial vaut pression × volume × 0,0012 kg/L.
 - **Poumons** : le volume du plongeur inclut la moitié du volume pulmonaire maximal. Seul l'écart du volume instantané à cette moitié s'ajoute à la poussée, à 100 %.
-- **Combinaison** : volume paramétrable (6 L par défaut, 10 L en dur dans la V2.6). Un troisième oscilloscope (orange) montre son volume de flottaison, qui diminue avec la profondeur (10 % par bar).
+- **Combinaison** : volume paramétrable (6 L par défaut, 10 L en dur dans la V2.6). Un troisième oscilloscope (orange) montre son volume de flottaison, qui diminue avec la profondeur : V = V0 × (0,1 + 0,9 / P absolue), soit −45 % à 10 m et −60 % à 20 m (V2.6 : −10 % par bar). Valeur à 20 m choisie d'après Potočić Matković et al., *Polymers* 2025 (−64 % d'épaisseur à 200 kPa).
 - **Paramètres** : le panneau couvre tout l'écran et arrête la simulation. Le bouton « Valider » le ferme et relance la plongée (Restart).
 - **Écrans plus hauts que 16:9** (4:3, 16:10…) : le ciel est agrandi au lieu d'afficher des bandes noires. Sur un écran plus large, il reste des bandes sur les côtés.
 - **Horloge** : la simulation avance par pas fixes de 10 ms, rattrapés sur l'horloge réelle. Le résultat ne dépend plus de la fréquence d'affichage. Si l'onglet est masqué ou l'appareil en veille, la simulation reprend sans saut.

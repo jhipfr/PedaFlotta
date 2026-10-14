@@ -107,7 +107,9 @@ class Model {
     // VolumeBouteille et PressionGonflage ne sont plus réinitialisés ici : les valeurs des paramètres sont prises en compte.
     this.DensiteAir = 0.0012;    // kgs/L
     this.PoidsAirBloc = this.PressionGonflage * this.VolumeBouteille * this.DensiteAir;
-    this.CompressionNeopreneParBar = 10;  // % par bar
+    // Néoprène : fraction solide incompressible + gaz suivant Boyle. 0,1 => 40 % du volume restant à 3 bar (20 m),
+    // soit 60 % de perte (valeur choisie, cf. Potočić Matković 2025 : -64 % d'épaisseur à 200 kPa). V2.6 : 10 % par bar linéaire.
+    this.FractionSolideNeoprene = 0.1;
     this.ChronoInflateur = new Stopwatch();
     this.ChronoPurge = new Stopwatch();
     this.ChronoPurgeRapide = new Stopwatch();
@@ -164,7 +166,8 @@ class Model {
       this.VolumeFlottaisonDuGilet = this.VolumeNormoLitresGilet / this.PressionAbsolue;
     }
     // Compression Combinaison
-    this.FlottaCombi = this.VolumeCombinaison * (1 - this.CompressionNeopreneParBar / 100 * this.Profondeur / 10);
+    const pCombi = Math.max(1, this.PressionAbsolue);
+    this.FlottaCombi = this.VolumeCombinaison * (this.FractionSolideNeoprene + (1 - this.FractionSolideNeoprene) / pCombi);
     // Vidange bouteille
     this.PressionBloc = this.PressionGonflage * (0.75 * (1 - this.time / 360) + 0.25);
     this.PoidsAirBloc = this.PressionBloc * this.VolumeBouteille * this.DensiteAir;
