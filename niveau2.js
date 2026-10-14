@@ -192,12 +192,12 @@ function dessiner() {
   ctx.strokeStyle = "rgba(255,255,255,0.8)"; ctx.lineWidth = 3; ctx.setLineDash([8, 6]);
   ctx.beginPath(); ctx.moveTo(bx1 + bw, by1 + bh / 2); ctx.lineTo(cx - 1.25 * R, hy + 1.6 * R);
   ctx.moveTo(bx2, by2 + bh / 2); ctx.lineTo(cx + 1.45 * R, hy + 0.25 * R); ctx.stroke(); ctx.setLineDash([]);
-  bouton("saPurge", "Sa purge", bx1, by1, bw, bh, "#E070E0", lui, "IsPurge");
-  bouton("sonInfl", "Son inflateur", bx2, by2, bw, bh, "#FFC0CB", lui, "IsInflateur");
+  bouton("saPurge", "Sa purge", bx1, by1, bw, bh, ACTIONS.saPurge[0], lui, "IsPurge");
+  bouton("sonInfl", "Son inflateur", bx2, by2, bw, bh, ACTIONS.sonInfl[0], lui, "IsInflateur");
 
   // mes commandes : inflateur en bas à gauche, purge en bas à droite
-  bouton("monInfl", "Mon inflateur", jaugeW + 10, LH - mh - 10, mw, mh, "#FFC0CB", moi, "IsInflateur");
-  bouton("maPurge", "Ma purge", LW - mw - 10, LH - mh - 10, mw, mh, "#E070E0", moi, "IsPurge");
+  bouton("monInfl", "Mon inflateur", jaugeW + 10, LH - mh - 10, mw, mh, ACTIONS.monInfl[0], moi, "IsInflateur");
+  bouton("maPurge", "Ma purge", LW - mw - 10, LH - mh - 10, mw, mh, ACTIONS.maPurge[0], moi, "IsPurge");
 
   // curseur « poumon ballast » à droite : mon volume pulmonaire moyen (comme le niveau 1)
   {
@@ -295,10 +295,10 @@ function dessinerProfil(BH, portrait) {
     ctx.beginPath(); ctx.moveTo(X(t), y0); ctx.lineTo(X(t), y1); ctx.stroke();
     ctx.fillStyle = "#ddd"; ctx.fillText(t / 60 + "min", X(t), y1 + 4);
   }
-  // actions : une barre verticale par appui, à sa date de début, large de 1 px par seconde d'appui (1 px minimum)
+  // actions : une barre verticale par appui, de son début à sa fin sur l'axe du temps (elle s'élargit tant qu'on appuie), 1 px minimum
   for (const a of actions) {
     ctx.fillStyle = ACTIONS[a.id][0];
-    ctx.fillRect(X(a.t0), y0, Math.max(1, (a.t1 === null ? moi.time : a.t1) - a.t0), y1 - y0);
+    ctx.fillRect(X(a.t0), y0, Math.max(1, X(a.t1 === null ? moi.time : a.t1) - X(a.t0)), y1 - y0);
   }
   if (!portrait) { // légende à droite du titre
     ctx.font = `bold 18px ${FONT}`; ctx.textAlign = "right"; ctx.textBaseline = "top";
