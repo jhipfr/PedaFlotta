@@ -13,6 +13,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 | `index.html`, `style.css` | Page et styles | `MainWindow.xaml`, `App.xaml` |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Mode hors ligne / installation | nouveau |
 | `img/plongeur.png`, `img/Souris.png` | Images | `Resources/` |
+| `img/diver_body.png`, `img/diver_up.png`, `img/diver_down.png` | Plongeur découpé pour le palmage | tirés de `plongeur.png` |
 
 ## Commandes (identiques à l'original)
 
@@ -37,13 +38,13 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
   - Score : 100 points par seconde jusqu'à 5 cm d'écart au profil guide, puis décroissance linéaire jusqu'à 1 point par seconde à 20,05 m d'écart. Pénalité de −500 points à chaque nouvel appui sur le gonflage du gilet pendant la plongée.
   - Bulles : 5 par seconde en moyenne pendant l'expiration, montée de 15 px/s, grossissement de 1 px/s (valeurs V2.6 par tick ramenées à la seconde).
 - **Fonds** : image de sable (rides, galets, algues) et ciel avec nuages légers (`img/sable.png`, `img/ciel.png`, dessinés pour le projet). En portrait, le sable défile avec le plongeur et les nuages plus lentement.
-- **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus.
+- **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus. Il palme pendant la plongée : l'image est découpée en corps et deux jambes (`img/diver_*.png`), les jambes pivotent en opposition de ±6° à 0,8 Hz.
 
 - **Téléphone tenu verticalement** (ajout web, fichier `portrait.js`) :
   - L'écran représente 1 minute de plongée. Le plongeur part de la gauche, puis reste à 25 % de la largeur pendant que le fond défile vers la gauche.
   - En bas, seuls les boutons Gilet et Purge. Jauge de vitesse à gauche, curseur poumon à droite, avec les oscilloscopes à 50 % d'opacité juste à côté.
   - Un appui démarre la plongée. En fin de plongée, un appui la relance.
-  - Bouton Paramètres en haut à gauche, score en haut à droite. Gilet en violet clair pour rester lisible. Le graphique de vitesse n'existe qu'en paysage.
+  - Bouton Paramètres en haut à gauche (libellé et valeur sur la même ligne), score en haut à droite. Gilet en violet clair pour rester lisible. Le graphique de vitesse n'existe qu'en paysage.
 
 ### Autres écarts
 

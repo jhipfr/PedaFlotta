@@ -127,7 +127,7 @@ function drawPortrait() {
   if (imgDiver.complete && imgDiver.naturalWidth) {
     const r = Math.min(P_SPRITE_W / imgDiver.naturalWidth, P_SPRITE_H / imgDiver.naturalHeight);
     const dw = imgDiver.naturalWidth * r, dh = imgDiver.naturalHeight * r;
-    ctx.drawImage(imgDiver, xd - camX - dw, yOfD(model.Profondeur) - dh / 2, dw, dh);
+    drawDiver(xd - camX - dw, yOfD(model.Profondeur) - dh / 2, dw, dh);
   }
   ctx.restore();
 

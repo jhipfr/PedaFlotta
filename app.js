@@ -56,6 +56,24 @@ const $ = (id) => document.getElementById(id);
 const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
 const speedLayer = document.createElement("canvas"), sctx = speedLayer.getContext("2d");
 const imgDiver = new Image(); imgDiver.src = "img/plongeur.png"; imgDiver.onload = () => { dirty = true; };
+// Palmage : l'image est découpée en corps + jambe haute + jambe basse (même cadre 499x177),
+// les jambes pivotent en opposition autour des hanches.
+const diverParts = ["body", "up", "down"].map(n => { const i = new Image(); i.src = "img/diver_" + n + ".png"; i.onload = () => { dirty = true; }; return i; });
+const FIN_PIVOTS = [null, [240, 118], [235, 140]], FIN_SIGNS = [0, 1, -1];
+const FIN_ANGLE = 6 * Math.PI / 180, FIN_FREQ = 0.8; // amplitude (rad), cadence (Hz)
+let finPhase = 0;
+function drawDiver(x, y, dw, dh) {
+  if (!diverParts.every(i => i.complete && i.naturalWidth)) { ctx.drawImage(imgDiver, x, y, dw, dh); return; }
+  const sx = dw / imgDiver.naturalWidth, sy = dh / imgDiver.naturalHeight;
+  const a = FIN_ANGLE * Math.sin(2 * Math.PI * FIN_FREQ * finPhase);
+  for (const i of [1, 2, 0]) { // jambes d'abord, le corps masque la jointure
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(sx, sy);
+    if (FIN_PIVOTS[i]) { const [px, py] = FIN_PIVOTS[i]; ctx.translate(px, py); ctx.rotate(-a * FIN_SIGNS[i]); ctx.translate(-px, -py); }
+    ctx.drawImage(diverParts[i], 0, 0);
+    ctx.restore();
+  }
+}
 const imgSable = new Image(); imgSable.src = "img/sable.png"; imgSable.onload = () => { dirty = true; };
 const imgCiel = new Image(); imgCiel.src = "img/ciel.png"; imgCiel.onload = () => { dirty = true; };
 // Répète une image horizontalement sur [x0, x1], hauteur h, décalée de 'offset' (défilement).
@@ -138,6 +156,7 @@ function advance(now) {
     accu -= STEP;
     model.compute(STEP);
     refreshAll(STEP);
+    finPhase += STEP;
   }
   updateLabels();
   updateSlider();
@@ -378,7 +397,7 @@ function draw() {
     const dw = imgDiver.naturalWidth * r, dh = imgDiver.naturalHeight * r;
     // Correction demandée : image centrée verticalement sur le point du profil (l'original la posait
     // au-dessus : boîte 75x55 dont le bas est sur le profil, image de ~27 px centrée dedans).
-    ctx.drawImage(imgDiver, sprite.x + (75 - dw) / 2, sprite.y + 55 - dh / 2, dw, dh);
+    drawDiver(sprite.x + (75 - dw) / 2, sprite.y + 55 - dh / 2, dw, dh);
   }
   for (const m of markers) {
     text(m.text, m.lx + 5, m.ly + 5, m.color);
@@ -467,14 +486,16 @@ function layoutParams() {
   if (!PORTRAIT) { // paysage : 3 colonnes comme la V2.6
     place(inner, 0, SKY, W, H);
     const unit = W / 5, rh = 6 * R / 13, colX = { 1: 0.5 * unit, 3: 2 * unit, 5: 3.5 * unit };
-    for (const p of paramEls) place(p.el, colX[p.col], p.row * rh, unit, rh);
+    for (const p of paramEls) { place(p.el, colX[p.col], p.row * rh, unit, rh); p.el.style.justifyContent = p.el.style.textAlign = ""; }
   } else {        // portrait : une seule colonne
     place(inner, 0, 0, PW, PH);
+    // label et valeur sur la même ligne
     let y = 130;
+    const LX = 60, IW = 220, IX = PW - 60 - IW, RH = 78;
     for (const p of paramEls) {
-      const h = p.kind === "title" ? 80 : p.kind === "label" ? 55 : 75;
-      if (p.kind === "title" && y > 130) y += 20;
-      place(p.el, 60, y, PW - 120, h); y += h;
+      if (p.kind === "title") { if (y > 130) y += 20; place(p.el, LX, y, PW - 120, 80); y += 80; }
+      else if (p.kind === "label") { place(p.el, LX, y, IX - LX - 10, RH); p.el.style.justifyContent = "flex-start"; p.el.style.textAlign = "left"; }
+      else { place(p.el, IX, y + 4, IW, RH - 8); y += RH; }
     }
   }
 }
