@@ -21,7 +21,7 @@ let vMax = 0;                // vitesse de remontée maximale (m/min)
 let tHorsVert = 0;           // temps passé au-dessus de la zone verte (s)
 // Score : -1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite),
 // -10 points par gonflage à partir du deuxième, +100 points à la surface à l'heure du profil, moins 2 points par seconde de retard.
-let score = 0, nbGonflages = 0, bonusSurface = 0, gameOver = false;
+let score = 0, bonusSurface = 0, gameOver = false;
 const DUREE_MAX = 240;       // s : largeur du bandeau ; game over si pas en surface à 4 min
 const vitesseLimite = (d) => (d > 10 ? 10 : 5);
 let particules = [], bulles = [];
@@ -61,7 +61,7 @@ function preparer(m) {
 function nouvellePartie() {
   preparer(moi); preparer(lui);
   ecartAff = lui.MasseApparentePlongeur - moi.MasseApparentePlongeur;
-  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; nbGonflages = 0; bonusSurface = 0; gameOver = false;
+  vMax = 0; tHorsVert = 0; bulles = []; vAff = 0; score = 0; bonusSurface = 0; gameOver = false;
   profil = construireProfil(DEPART); traj = [{ t: 0, d: DEPART }];
   etat = "attente";
 }
@@ -88,8 +88,11 @@ function pas(dt) {
   vMax = Math.max(vMax, vAff);
   if (moi.time - traj[traj.length - 1].t >= 0.2) traj.push({ t: moi.time, d: moi.Profondeur });
   if (vAff > 4.8) tHorsVert += dt; // 4,8 m/min : haut de la zone verte de la jauge (comme le niveau 1)
+  // score par seconde : redescente −10 × vitesse, sous la limite +vitesse, au-dessus −dépassement
   const exces = vAff - vitesseLimite(moi.Profondeur);
-  if (exces > 0) score -= exces * dt;
+  if (vAff < 0) score += 10 * vAff * dt;
+  else if (exces < 0) score += vAff * dt;
+  else score -= exces * dt;
   // particules : immobiles dans l'eau, elles défilent quand on bouge (100 px par mètre)
   for (const p of particules) {
     p.y += zp * 100 * dt;
@@ -100,8 +103,8 @@ function pas(dt) {
   for (const b of bulles) { b.y -= 2.5 * dt; b.x += (Math.random() - 0.5) * 0.02; }
   bulles = bulles.filter((b) => b.y > -6);
   if (etat === "plongee" && moi.Profondeur <= 0) {
-    const retard = moi.time - tSurfaceProfil; // rien si on arrive trop tôt
-    bonusSurface = retard >= 0 ? Math.max(0, 100 - 2 * retard) : 0;
+    const ecart = Math.abs(moi.time - tSurfaceProfil); // avance ou retard : même décroissance
+    bonusSurface = Math.max(0, 100 - 2 * ecart);
     score += bonusSurface;
     etat = "fin"; relacherTout();
   } else if (etat === "plongee" && moi.time >= DUREE_MAX) { gameOver = true; etat = "fin"; relacherTout(); }
@@ -391,7 +394,6 @@ cv.addEventListener("pointerdown", (e) => {
     etat = "plongee"; precedent = performance.now(); accu = 0; return;
   }
   if (etat === "plongee" && b.m) {
-    if (b.champ === "IsInflateur" && !b.m.IsInflateur && ++nbGonflages > 1) score -= 10; // gonflages : le premier est gratuit
     b.m[b.champ] = true; appuis.set(e.pointerId, b); cv.setPointerCapture(e.pointerId); }
 });
 function relacher(e) { curseurs.delete(e.pointerId); const b = appuis.get(e.pointerId); if (b) { b.m[b.champ] = false; appuis.delete(e.pointerId); } }

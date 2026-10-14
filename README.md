@@ -73,7 +73,7 @@ Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : 
 - Bandeau du haut : profil de remontée cible (rouge) et trajectoire réelle (blanc). Profil : 5 s de décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite, palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface, où le profil reste jusqu'à 4 min (fin du bandeau).
 - Vitesse affichée (texte et jauge) filtrée par un passe-bas du premier ordre de demi-vie 1 s.
 - Son inflateur est tenu par ma main droite (bras en combinaison noire) au niveau de son visage. Butées de l'image à ±5 kg d'écart.
-- Score (en haut à droite) : −1 point par seconde et par m/min au-dessus de la vitesse du profil (10 m/min au-delà de 10 m, 5 m/min ensuite, vitesse filtrée) ; −10 points par gonflage à partir du deuxième appui (mon inflateur et le sien confondus) ; à la surface, +100 points si on arrive à l'heure du profil ou après, moins 2 points par seconde de retard, rien si on arrive trop tôt.
+- Score (en haut à droite), par seconde avec la vitesse filtrée : +vitesse (m/min) sous la limite du profil (10 m/min au-delà de 10 m, 5 m/min ensuite) ; −1 point par m/min au-dessus ; −10 × vitesse en redescente. À la surface : +100 points à l'heure du profil, moins 2 points par seconde d'écart, en avance comme en retard. Pas de pénalité de gonflage au niveau 2 (prévue pour le niveau 4).
 - Le bandeau couvre 4 minutes. Pas en surface à 4 min : game over.
 - Molette : mon volume pulmonaire moyen. Multi-touch : on peut appuyer sur deux boutons à la fois.
 - Fin à la surface : durée, vitesse maximale et temps passé au-dessus de la zone verte (4,8 m/min).
