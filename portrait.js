@@ -161,8 +161,11 @@ function drawPortrait() {
   // informations en haut (dans le ciel)
   const tt = model.time, ts = tt < 60 ? Math.trunc(Math.max(0, tt)) + "s"
     : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
-  ptext(ts + "   " + fr(model.Profondeur, 1) + "m   " + model.Vitesse.toFixed(0) + "m/min", 20, 112, COL.Black);
-  ptext("Masse app. " + fr(model.MasseApparentePlongeur, 1) + "kg", 20, 162, COL.Black, 34);
+  ptext(model.Vitesse.toFixed(0) + " m/min", 20, 112, COL.Black, 44);        // vitesse verticale tout à gauche
+  ptext("Masse app. " + fr(model.MasseApparentePlongeur, 1) + "kg", 20, 168, COL.Black, 34);
+  ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillStyle = COL.Black; // horloge au milieu, profondeur dessous
+  ctx.font = P_FONT.replace("40px", "56px"); ctx.fillText(ts, PW / 2, 18);
+  ctx.font = P_FONT.replace("40px", "48px"); ctx.fillText(fr(model.Profondeur, 1) + " m", PW / 2, 84);
   ctx.textAlign = "right"; ctx.textBaseline = "top"; ctx.fillStyle = COL.Black; // score en haut à droite
   ctx.font = P_FONT.replace("40px", "34px"); ctx.fillText("Score", PW - 20, 18);
   ctx.font = P_FONT.replace("40px", "56px"); ctx.fillText(score.toFixed(0), PW - 20, 56);

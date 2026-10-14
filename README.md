@@ -44,7 +44,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
   - L'écran représente 1 minute de plongée. Le plongeur part de la gauche, puis reste à 25 % de la largeur pendant que le fond défile vers la gauche.
   - En bas, seuls les boutons Gilet et Purge. Jauge de vitesse à gauche, curseur poumon à droite, avec les oscilloscopes à 50 % d'opacité juste à côté.
   - Un appui démarre la plongée. En fin de plongée, un appui la relance.
-  - Bouton Paramètres en haut à gauche (libellé et valeur sur la même ligne), score en haut à droite. Gilet en violet clair pour rester lisible. Le graphique de vitesse n'existe qu'en paysage.
+  - Bouton Paramètres en haut à gauche (libellé et valeur sur la même ligne), vitesse verticale et masse apparente dessous ; horloge et profondeur au centre ; score en haut à droite. Gilet en violet clair pour rester lisible. Le graphique de vitesse n'existe qu'en paysage.
 
 ### Autres écarts
 
