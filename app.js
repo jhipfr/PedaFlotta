@@ -54,6 +54,7 @@ const $ = (id) => document.getElementById(id);
 const stage = $("stage"), cv = $("cv"), ctx = cv.getContext("2d");
 const speedLayer = document.createElement("canvas"), sctx = speedLayer.getContext("2d");
 const imgDiver = new Image(); imgDiver.src = "img/plongeur.png"; imgDiver.onload = () => { dirty = true; };
+let PORTRAIT = false, ended = false, sliderH = SLIDER.h;
 let scale = 1, k = 1, dirty = true, SKY = 0, SH = H; // SKY : hauteur de ciel ajoutée, SH : hauteur totale
 
 function place(el, x, y, w, h) {
@@ -88,6 +89,11 @@ function layout() {
 
 function resize() {
   const vw = window.innerWidth, vh = window.innerHeight;
+  const wasPortrait = PORTRAIT;
+  PORTRAIT = vh > vw; // téléphone tenu verticalement : vue défilante (portrait.js)
+  document.body.classList.toggle("portrait", PORTRAIT);
+  if (PORTRAIT) { portraitResize(vw, vh); return; }
+  if (wasPortrait) landscapeRestore();
   SH = Math.max(H, W * vh / vw); // écran plus haut que 16:9 : on agrandit le ciel
   SKY = SH - H;
   scale = Math.min(vw / W, vh / SH);
@@ -135,7 +141,7 @@ function setIsPause(v) {
 // ---------- Go / InitCollection ----------
 function go() {
   model.initModel();
-  previous = performance.now(); accu = 0;
+  previous = performance.now(); accu = 0; ended = false;
   tempo = 0; decalageEtiquette = 0; deltatempo = 0;
   setOffset(model.OffsetRespiration);
   bubbles = []; markers = []; speedSegs = [];
@@ -237,6 +243,7 @@ function refreshAll(dt) {
       giletGridX[i] = xg;
     }
   } else { // fin de plongée
+    ended = true;
     timerStop();
     sliderEnabled = false;
     bubbles = [];
@@ -300,6 +307,7 @@ function text(s, x, y, color, align = "left") {
 }
 
 function draw() {
+  if (PORTRAIT) { drawPortrait(); return; }
   ctx.setTransform(k, 0, 0, k, 0, 0);
   ctx.fillStyle = COL.Cyan; ctx.fillRect(0, 0, W, SKY + 1); // ciel ajouté (écrans plus hauts que 16:9)
   ctx.setTransform(k, 0, 0, k, 0, SKY * k);
@@ -411,14 +419,14 @@ const THUMB_H = 80;
 function setOffset(v) { model.OffsetRespiration = v; updateSlider(); }
 function updateSlider() {
   const v = model.OffsetRespiration, lo = model.OffsetMin, hi = model.OffsetMax;
-  const y = hi > lo ? (hi - v) / (hi - lo) * (SLIDER.h - THUMB_H) : 0;
+  const y = hi > lo ? (hi - v) / (hi - lo) * (sliderH - THUMB_H) : 0;
   $("thumb").style.top = y + "px";
   $("thumbTxt").textContent = v.toFixed(2);
 }
 function sliderValueAt(clientY, grabDy) {
   const rect = $("slider").getBoundingClientRect();
   const y = (clientY - rect.top) / scale - grabDy;
-  return model.OffsetMax - (y / (SLIDER.h - THUMB_H)) * (model.OffsetMax - model.OffsetMin);
+  return model.OffsetMax - (y / (sliderH - THUMB_H)) * (model.OffsetMax - model.OffsetMin);
 }
 
 // ---------- paramètres ----------
@@ -460,6 +468,10 @@ function isExcluded(target) { // Button, Slider, TextBlock, Rectangle exclus (Mo
   return !!target.closest("button, .slider, .lbl, .params, .btnwrap");
 }
 stage.addEventListener("pointerdown", (e) => {
+  if (PORTRAIT) { // pas de bouton Pause/Restart en portrait : un appui démarre, et relance en fin de plongée
+    if (ended) { go(); return; }
+    if (!isPause) setIsPause(true);
+  }
   if (isExcluded(e.target)) return;
   if (e.button === 0 && enabled.gilet) { model.IsInflateur = true; setBg($("btnGilet"), COL.Green); }
   if (e.button === 2 && enabled.purge) { model.IsPurge = true; setBg($("btnPurge"), COL.Green); }

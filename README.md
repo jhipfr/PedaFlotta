@@ -9,6 +9,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 |---|---|---|
 | `model.js` | Physique (portage ligne à ligne) | `Model.cs` |
 | `app.js` | Affichage, souris/tactile, score, paramètres | `MainWindow.xaml(.cs)`, `App.xaml` |
+| `portrait.js` | Mode téléphone vertical | nouveau |
 | `index.html`, `style.css` | Page et styles | `MainWindow.xaml`, `App.xaml` |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Mode hors ligne / installation | nouveau |
 | `img/plongeur.png`, `img/Souris.png` | Images | `Resources/` |
@@ -35,6 +36,12 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
   - Score = intégrale de l'écart au profil guide, **en mètres × secondes** (la V2.6 additionnait des pixels à chaque tick). Les scores ne sont donc pas comparables à ceux de l'.exe.
   - Bulles : 5 par seconde en moyenne pendant l'expiration, montée de 15 px/s, grossissement de 1 px/s (valeurs V2.6 par tick ramenées à la seconde).
 - **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus.
+
+- **Téléphone tenu verticalement** (ajout web, fichier `portrait.js`) :
+  - L'écran représente 1 minute de plongée. Le plongeur part de la gauche, puis reste à 25 % de la largeur pendant que le fond défile vers la gauche.
+  - En bas, seuls les boutons Gilet et Purge. Le curseur poumon est à droite, avec les oscilloscopes à 50 % d'opacité juste à côté.
+  - Un appui démarre la plongée. En fin de plongée, un appui la relance.
+  - Les paramètres et le graphique de vitesse ne sont accessibles qu'en mode paysage.
 
 ### Autres écarts
 

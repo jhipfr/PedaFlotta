@@ -33,3 +33,10 @@ body { touch-action: none; user-select: none; -webkit-user-select: none; -webkit
 #inner, #paramsInner { position: absolute; left: 0; width: 1920px; height: 1080px; }
 .plabel { position: absolute; display: flex; align-items: center; justify-content: center; text-align: center; }
 .pinput { position: absolute; box-sizing: border-box; font: inherit; padding: 0 4px; border: 1px solid #ABADB3; background: #fff; }
+
+/* Mode téléphone vertical */
+#portraitUI { position: absolute; left: 0; top: 0; display: none; }
+body.portrait #portraitUI { display: block; }
+body.portrait #inner { display: none; }
+body.portrait #stage { font-size: 44px; }
+body.portrait #thumb { height: 80px; }
