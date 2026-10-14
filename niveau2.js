@@ -7,7 +7,7 @@
 
 const STEP = 0.01;           // pas de calcul (s), comme le niveau 1
 let DEPART = 20;             // profondeur de départ (m), réglable dans Paramètres
-const ECART_MAX = 2;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
+const ECART_MAX = 3;         // kg : écart de flottabilité qui amène la tête en butée haute ou basse
 const LISSAGE = 0.5;         // s : constante de temps de l'affichage de l'écart
 const FONT = "'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
 const fr = (x, d) => x.toFixed(d).replace(".", ",");
@@ -141,8 +141,10 @@ function dessiner() {
   const R = Math.min(220, zone * 0.4); // plongeur proche (2x la taille du premier prototype)
   const cx = colG + zone / 2;
   const e = clamp(ecartAff / ECART_MAX, -1, 1);   // -1 : lui plus léger ; +1 : lui plus lourd
-  const yHaut = BH + 0.3 * R, yBas = LH + 0.2 * R; // centre de la tête aux deux butées (le haut de la vue est sous le bandeau)
-  const hy = yHaut + (yBas - yHaut) * (e + 1) / 2;
+  // Centre de la tête (hy) : yeux à hy - 0,08R, menton à hy + 0,9R, front à hy - 0,66R.
+  // Équilibre : yeux au milieu de la vue. -3 kg : menton sous le bandeau. +3 kg : front en bas de l'écran.
+  const yHaut = BH - 0.9 * R, yMilieu = (BH + LH) / 2 + 0.08 * R, yBas = LH + 0.66 * R;
+  const hy = e < 0 ? yMilieu + (yMilieu - yHaut) * e : yMilieu + (yBas - yMilieu) * e;
   ctx.save(); ctx.beginPath(); ctx.rect(0, BH, LW, LH - BH); ctx.clip();
   dessinerBinome(cx, hy, R, colG);
   ctx.restore();
