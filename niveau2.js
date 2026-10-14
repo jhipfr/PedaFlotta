@@ -392,9 +392,16 @@ const PARAMS = [
   ["Son lest (kg)", () => lui.LestPlongeur, (v) => { lui.LestPlongeur = v; }],
 ];
 const panneau = document.getElementById("params"), champs = document.getElementById("champs");
-const entrees = PARAMS.map(([label]) => {
+// Disposition : profondeur à gauche, colonne « Moi » (masse, volume, lest) puis colonne « Lui ».
+for (const [t, col] of [["Moi", 2], ["Lui", 3]]) {
+  const h = document.createElement("div"); h.className = "titre"; h.textContent = t;
+  h.style.gridColumn = col; h.style.gridRow = 1; champs.appendChild(h);
+}
+const entrees = PARAMS.map(([label], n) => {
   const l = document.createElement("label"); l.textContent = label;
   const i = document.createElement("input"); i.type = "text"; i.inputMode = "decimal";
+  l.style.gridColumn = n === 0 ? 1 : n <= 3 ? 2 : 3;
+  l.style.gridRow = n === 0 ? 2 : 2 + (n - 1) % 3;
   l.appendChild(i); champs.appendChild(l); return i;
 });
 function ouvrirParams() {

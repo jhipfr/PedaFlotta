@@ -16,7 +16,13 @@
   #params { display: none; position: fixed; inset: 0; background: rgba(128,128,128,0.97); z-index: 10;
     flex-direction: column; align-items: center; justify-content: center; gap: 24px;
     font: bold 20px 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif; touch-action: auto; }
-  #champs { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px 40px; width: min(900px, 92vw); }
+  #champs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 40px; width: min(1000px, 92vw); }
+  #champs .titre { text-align: center; font-size: 24px; }
+  @media (max-width: 760px) { /* téléphone : une seule colonne, dans l'ordre profondeur, moi, lui */
+    #champs { grid-template-columns: 1fr; }
+    #champs > * { grid-column: auto !important; grid-row: auto !important; }
+    #champs .titre { display: none; }
+  }
   #champs label { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   #champs input { -webkit-user-select: text; user-select: text; width: 110px; font: inherit; padding: 6px; border: 1px solid #ABADB3; }
   #valider { font: inherit; font-size: 24px; padding: 14px 60px; border: 1px solid #707070; border-radius: 6px;
