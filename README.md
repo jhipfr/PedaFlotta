@@ -64,11 +64,11 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 
 Page `niveau2.html` (fichier `niveau2.js`), accessible seulement par son lien : `https://<compte>.github.io/PedaFlotta/niveau2.html`.
 
-- Vue subjective : on tient de la main gauche un plongeur face à nous. Boutons « Sa purge » et « Son inflateur » sur son équipement, « Mon inflateur » et « Ma purge » à gauche, jauge de vitesse à droite (mêmes couleurs que le niveau 1).
+- Vue subjective : on tient de la main gauche un plongeur face à nous. Boutons « Sa purge » et « Son inflateur » sur son équipement, « Mon inflateur » et « Ma purge » à gauche, jauge de vitesse tout à gauche (mêmes couleurs que le niveau 1). Profondeur, vitesse et durée dans un ordinateur de plongée dessiné en haut à droite (boîtier gris, écran noir, vitesse colorée selon la zone de la jauge).
 - Deux instances de `model.js`, accrochées : même profondeur et même vitesse. Le mouvement vient de la somme des deux masses apparentes, sur la somme des deux masses, avec des frottements doublés (deux surfaces face à l'eau).
 - Paramètres : profondeur de départ (20 m par défaut), masse, volume et lest de chacun des deux plongeurs.
 - Au départ, les deux plongeurs sont équilibrés à la profondeur choisie (gilets gonflés juste ce qu'il faut). Le bouton **Go** lance la remontée.
-- Son image monte ou descend selon l'écart de flottabilité (lui − moi), lissé sur 0,5 s. À l'équilibre, ses yeux sont au milieu de la vue (sous le bandeau). 3 kg plus léger que moi : son menton arrive sous le bandeau. 3 kg plus lourd : son front arrive en bas de l'écran. Ses boutons restent à l'écran pour rester utilisables.
+- Son image monte ou descend selon l'écart de flottabilité (lui − moi), lissé sur 0,5 s. À l'équilibre, ses yeux sont au milieu de l'écran. 3 kg plus léger que moi : son menton arrive sous le bandeau. 3 kg plus lourd : son front arrive en bas de l'écran. Ses boutons restent à l'écran pour rester utilisables.
 - Plongeur vu de près (tête de rayon 220 px logiques, deux fois le premier prototype).
 - Bandeau du haut : profil de remontée cible (rouge) et trajectoire réelle (blanc). Profil : 5 s de décompte à la profondeur de départ, 10 m/min jusqu'à 10 m, 5 m/min ensuite, palier de 30 s à 3 m, puis 5 m/min jusqu'à la surface.
 - Vitesse affichée (texte et jauge) filtrée par un passe-bas du premier ordre de demi-vie 1 s.
