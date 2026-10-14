@@ -26,7 +26,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 
 ### Modifications demandées (14/10/2026)
 
-- **Masse du plongeur** : 77 kg par défaut (81 kg dans la V2.6).
+- **Plongeur** : 80 kg et 80 L par défaut (81 kg / 77 L dans la V2.6). Les coefficients de frottement ne sont plus dans le panneau Paramètres (valeurs V2.6 conservées : 5 et 8).
 - **Volume Max Poumon** : il règle l'échelle de l'oscilloscope et le volume pulmonaire maximal. Le curseur va de 1 L + amplitude à Volume Max − amplitude (1,5 à 4,5 L par défaut, comme avant).
 - **Taille Bloc et Pression Initiale** : elles sont prises en compte. Le poids d'air initial vaut pression × volume × 0,0012 kg/L.
 - **Poumons** : le volume du plongeur inclut la moitié du volume pulmonaire maximal. Seul l'écart du volume instantané à cette moitié s'ajoute à la poussée, à 100 %.
@@ -34,7 +34,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
 - **Paramètres** : le panneau couvre tout l'écran et arrête la simulation. Le bouton « Valider » le ferme et relance la plongée (Restart).
 - **Écrans plus hauts que 16:9** (4:3, 16:10…) : le ciel est agrandi au lieu d'afficher des bandes noires. Sur un écran plus large, il reste des bandes sur les côtés.
 - **Horloge** : la simulation avance par pas fixes de 10 ms, rattrapés sur l'horloge réelle. Le résultat ne dépend plus de la fréquence d'affichage. Si l'onglet est masqué ou l'appareil en veille, la simulation reprend sans saut.
-  - Score : 100 points par seconde à moins de 5 cm du profil guide, puis 1 point de moins par seconde par tranche de 5 cm d'écart (250 cm → 50 points/s, 5 m ou plus → 0). Un parcours parfait de 6 min vaut 36 000 points.
+  - Score : 100 points par seconde jusqu'à 5 cm d'écart au profil guide, puis décroissance linéaire jusqu'à 1 point par seconde à 20,05 m d'écart. Pénalité de −500 points à chaque nouvel appui sur le gonflage du gilet pendant la plongée.
   - Bulles : 5 par seconde en moyenne pendant l'expiration, montée de 15 px/s, grossissement de 1 px/s (valeurs V2.6 par tick ramenées à la seconde).
 - **Fonds** : image de sable (rides, galets, algues) et ciel avec nuages légers (`img/sable.png`, `img/ciel.png`, dessinés pour le projet). En portrait, le sable défile avec le plongeur et les nuages plus lentement.
 - **Plongeur** : il est centré sur la ligne du profil, au lieu d'être dessiné au-dessus.
@@ -43,7 +43,7 @@ Fonctionne en ligne, hors ligne (PWA avec service worker) et en double-cliquant 
   - L'écran représente 1 minute de plongée. Le plongeur part de la gauche, puis reste à 25 % de la largeur pendant que le fond défile vers la gauche.
   - En bas, seuls les boutons Gilet et Purge. Jauge de vitesse à gauche, curseur poumon à droite, avec les oscilloscopes à 50 % d'opacité juste à côté.
   - Un appui démarre la plongée. En fin de plongée, un appui la relance.
-  - Les paramètres et le graphique de vitesse ne sont accessibles qu'en mode paysage.
+  - Bouton Paramètres en haut à gauche, score en haut à droite. Gilet en violet clair pour rester lisible. Le graphique de vitesse n'existe qu'en paysage.
 
 ### Autres écarts
 

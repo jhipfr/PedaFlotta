@@ -31,8 +31,8 @@ class Model {
     // Paramètres modifiables (valeurs par défaut de Model.cs)
     this._pressionGonflage = 200;   // bars
     this._volumeBouteille = 15;     // Litre
-    this._massePlongeur = 77;       // kg (V2.6 : 81 ; demandé : 77)
-    this.VolumePlongeur = 77;       // L
+    this._massePlongeur = 80;       // kg (V2.6 : 81)
+    this.VolumePlongeur = 80;       // L (V2.6 : 77)
     this.LestPlongeur = 4;          // kg
     this.CoefficientFrottement = 5;
     this.CoefficientFrottementVisqueux = 8;

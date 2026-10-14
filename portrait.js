@@ -11,6 +11,7 @@ const PW = 1080;                 // largeur logique en portrait
 const P_BTN_H = 260;             // zone des boutons en bas
 const P_SLIDER_W = 120;          // curseur poumon à droite
 const P_GAUGE_W = 90;            // jauge de vitesse à gauche
+const P_VIOLET = "#C060FF";       // violet du gilet éclairci pour rester lisible à 50 % d'opacité
 const P_SPRITE_W = 150, P_SPRITE_H = 110;
 const P_FONT = "bold 40px 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif";
 let PH = 1920, P_SC = PH - P_BTN_H; // hauteur totale, hauteur de la scène
@@ -33,7 +34,7 @@ function portraitResize(vw, vh) {
   k = scale * (window.devicePixelRatio || 1);
   cv.width = Math.round(PW * k); cv.height = Math.round(PH * k);
   const ui = $("portraitUI");
-  for (const id of ["slider", "wGilet", "wPurge"]) ui.appendChild($(id));
+  for (const id of ["slider", "wGilet", "wPurge", "wParam"]) ui.appendChild($(id));
   place(ui, 0, 0, PW, PH);
   const top = P_SC / 7;
   place($("slider"), PW - P_SLIDER_W, top, P_SLIDER_W, P_SC - top);
@@ -41,13 +42,17 @@ function portraitResize(vw, vh) {
   const bw = PW / 2 - 60;
   place($("wGilet"), 40, P_SC + 30, bw, P_BTN_H - 60);
   place($("wPurge"), PW / 2 + 20, P_SC + 30, bw, P_BTN_H - 60);
+  place($("wParam"), 10, 10, 300, 90);                 // Paramètres en haut à gauche
+  place($("params"), 0, 0, PW, PH);
+  place($("wParamClose"), PW / 2 - 200, PH - 200, 400, 140);
+  layoutParams();
   updateSlider();
   dirty = true;
 }
 
 function landscapeRestore() {
   const inner = $("inner");
-  for (const id of ["slider", "wGilet", "wPurge"]) inner.appendChild($(id));
+  for (const id of ["slider", "wGilet", "wPurge", "wParam"]) inner.appendChild($(id));
   stage.style.width = W + "px";
   cv.style.width = W + "px";
   layout();
@@ -108,8 +113,9 @@ function drawPortrait() {
   // marqueurs gilet / purge (durée en haut de l'écran)
   for (const m of markers) {
     const x = X(tOfX(m.rx));
-    ctx.fillStyle = m.color; ctx.fillRect(x, 0, tOfX(m.rw) * ps, 60);
-    ptext(m.text, x + 4, 70 + Math.round((m.ly - (TH / 32 + 25)) / 20) * 45, m.color);
+    const bw = tOfX(m.rw) * ps, my = 205 + Math.round((m.ly - (TH / 32 + 25)) / 20) * 8;
+    ctx.fillStyle = m.color; ctx.fillRect(x, my, bw, 22); // sous les informations, pour ne pas passer sous « Paramètres »
+    ptext(m.text, x + bw + 6, my - 4, m.color, 30);
   }
   // bulles
   ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -142,7 +148,7 @@ function drawPortrait() {
     const yl = P_SC / 2 - 1.5 * h - 20, yg = P_SC / 2 - h / 2, yc = P_SC / 2 + h / 2 + 20;
     ctx.save(); ctx.globalAlpha = 0.5;
     scope({ x, y: yl, w, h }, model.CollectionSample.map((s) => s.poumon), model.VolumeMaxPoumon, COL.DarkGray, [1, 2, 3, 4].map((i) => w * i / 4));
-    scope({ x, y: yg, w, h }, giletFlat ? null : model.CollectionSample.map((s) => s.gilet), model.VolumeMaxDuGilet, COL.Purple, [1, 2, 3, 4].map((i) => w * i / 4));
+    scope({ x, y: yg, w, h }, giletFlat ? null : model.CollectionSample.map((s) => s.gilet), model.VolumeMaxDuGilet, P_VIOLET, [1, 2, 3, 4].map((i) => w * i / 4));
     scope({ x, y: yc, w, h }, model.CollectionSample.map((s) => s.combi), Math.max(model.VolumeCombinaison, 0.1), COL.Orange, [1, 2, 3, 4].map((i) => w * i / 4));
     ctx.restore();
     ctx.save(); ctx.globalAlpha = 0.8;
@@ -155,8 +161,11 @@ function drawPortrait() {
   // informations en haut (dans le ciel)
   const tt = model.time, ts = tt < 60 ? Math.trunc(Math.max(0, tt)) + "s"
     : String(Math.trunc(tt / 60)).padStart(2, "0") + "m:" + String(Math.trunc(tt) % 60).padStart(2, "0") + "s";
-  ptext(ts + "   " + fr(model.Profondeur, 1) + "m   " + model.Vitesse.toFixed(0) + "m/min", 20, 110, COL.Black);
-  ptext("Score " + score.toFixed(0) + "   Masse app. " + fr(model.MasseApparentePlongeur, 1) + "kg", 20, 160, COL.Black, 34);
+  ptext(ts + "   " + fr(model.Profondeur, 1) + "m   " + model.Vitesse.toFixed(0) + "m/min", 20, 112, COL.Black);
+  ptext("Masse app. " + fr(model.MasseApparentePlongeur, 1) + "kg", 20, 162, COL.Black, 34);
+  ctx.textAlign = "right"; ctx.textBaseline = "top"; ctx.fillStyle = COL.Black; // score en haut à droite
+  ctx.font = P_FONT.replace("40px", "34px"); ctx.fillText("Score", PW - 20, 18);
+  ctx.font = P_FONT.replace("40px", "56px"); ctx.fillText(score.toFixed(0), PW - 20, 56);
   if (!isPause && !ended) centerText("Appuyer pour démarrer", P_SC / 2 - 200);
   if (ended) centerText("Fin de plongée : appuyer pour recommencer", P_SC / 2 - 200);
 }

@@ -117,7 +117,7 @@ function resize() {
   stage.style.height = SH + "px";
   $("inner").style.top = SKY + "px";
   place($("params"), 0, 0, W, SH);
-  $("paramsInner").style.top = SKY + "px";
+  layoutParams();
   cv.style.height = SH + "px";
   k = scale * (window.devicePixelRatio || 1);
   cv.width = Math.round(W * k); cv.height = Math.round(SH * k);
@@ -280,12 +280,13 @@ function addMarker(seconds, debit, color) {
   LastEtiquette = xPlongeur;
 }
 
-// Score : 100 points par seconde à moins de 5 cm du profil guide, puis 1 point de moins par seconde
-// pour chaque tranche de 5 cm d'écart (250 cm d'écart -> 50 points/s, 5 m et plus -> 0).
+// Score : 100 points par seconde jusqu'à 5 cm d'écart au profil guide, puis décroissance linéaire
+// jusqu'à 1 point par seconde à 20,05 m d'écart (0 au-delà de ~20,25 m).
 const PX_PAR_M = TH / 35;
 function calculScore(i, j, dt) {
-  const ecartCm = Math.abs(regLin(i, j) - traj[i].y) / PX_PAR_M * 100;
-  score += Math.max(0, 100 - Math.floor(ecartCm / 5)) * dt;
+  const ecart = Math.abs(regLin(i, j) - traj[i].y) / PX_PAR_M; // m
+  const pts = ecart <= 0.05 ? 100 : 100 - 99 * (ecart - 0.05) / 20;
+  score += Math.max(0, pts) * dt;
   $("scoreLbl").textContent = "Score : \n" + score.toFixed(0);
 }
 function regLin(i, j) {
@@ -454,17 +455,37 @@ function sliderValueAt(clientY, grabDy) {
 // ---------- paramètres ----------
 const PARAMS = [
   [1, "Plongeur", [["Masse Plongeur (kg)", "MassePlongeur"], ["Volume Plongeur (L)", "VolumePlongeur"], ["Lest Plongeur (kg)", "LestPlongeur"],
-    ["CoeffFrottements (N.m-2.s-2)", "CoefficientFrottement"], ["Frottements Visqueux (N.m-2.s-1)", "CoefficientFrottementVisqueux"], ["Volume Combinaison (L)", "VolumeCombinaison"]]],
+    ["Volume Combinaison (L)", "VolumeCombinaison"]]], // frottements retirés du panneau (valeurs V2.6 conservées)
   [3, "Respiration", [["Amplitude Respiration Nominal (L)", "AmplitudeRespirationNominal"], ["Volume Max Poumon (L)", "VolumeMaxPoumon"],
     ["Periode Respiration (Cycle/min)", "PeriodeRespiration"], ["Taille Bloc (L)", "VolumeBouteille"], ["Pression Initiale (Bars)", "PressionGonflage"]]],
   [5, "Gilet Stabilisation", [["Volume Max Du Gilet (L)", "VolumeMaxDuGilet"], ["Vitesse De Remplissage (L/min)", "VitesseDeRemplissage"],
     ["Vitesse De Purge (L/min)", "VitesseDePurge"]]],
 ];
+const paramEls = []; // { el, col, row, kind }
+function layoutParams() {
+  const inner = $("paramsInner");
+  if (!PORTRAIT) { // paysage : 3 colonnes comme la V2.6
+    place(inner, 0, SKY, W, H);
+    const unit = W / 5, rh = 6 * R / 13, colX = { 1: 0.5 * unit, 3: 2 * unit, 5: 3.5 * unit };
+    for (const p of paramEls) place(p.el, colX[p.col], p.row * rh, unit, rh);
+  } else {        // portrait : une seule colonne
+    place(inner, 0, 0, PW, PH);
+    let y = 130;
+    for (const p of paramEls) {
+      const h = p.kind === "title" ? 80 : p.kind === "label" ? 55 : 75;
+      if (p.kind === "title" && y > 130) y += 20;
+      place(p.el, 60, y, PW - 120, h); y += h;
+    }
+  }
+}
 function buildParams() {
-  const p = $("params").firstElementChild, unit = W / 5, rh = 6 * R / 15;
-  const colX = { 1: 0.5 * unit, 3: 2 * unit, 5: 3.5 * unit };
+  const p = $("params").firstElementChild;
   for (const [col, title, fields] of PARAMS) {
-    const mk = (tag, row, cls) => { const e = document.createElement(tag); e.className = cls; place(e, colX[col], row * rh, unit, rh); p.appendChild(e); return e; };
+    const mk = (tag, row, cls) => {
+      const e = document.createElement(tag); e.className = cls; p.appendChild(e);
+      paramEls.push({ el: e, col, row, kind: row === 0 ? "title" : tag === "input" ? "input" : "label" });
+      return e;
+    };
     mk("div", 0, "plabel").textContent = title;
     fields.forEach(([label, prop], i) => {
       mk("div", 2 + 2 * i, "plabel").textContent = label;
@@ -480,6 +501,7 @@ function buildParams() {
       inp.addEventListener("blur", () => { inp.value = String(model[prop]); });
     });
   }
+  layoutParams();
 }
 function refreshParamInputs() {
   for (const inp of document.querySelectorAll(".pinput")) inp.value = String(model[inp.dataset.prop]);
@@ -490,12 +512,12 @@ function isExcluded(target) { // Button, Slider, TextBlock, Rectangle exclus (Mo
   return !!target.closest("button, .slider, .lbl, .params, .btnwrap");
 }
 stage.addEventListener("pointerdown", (e) => {
-  if (PORTRAIT) { // pas de bouton Pause/Restart en portrait : un appui démarre, et relance en fin de plongée
+  if (PORTRAIT && !paramsVisible && !e.target.closest("#wParam")) { // portrait : un appui démarre, et relance en fin de plongée
     if (ended) { go(); return; }
-    if (!isPause) setIsPause(true);
+    if (!isPause) { setIsPause(true); if (!isExcluded(e.target)) return; } // l'appui de démarrage ne gonfle pas
   }
   if (isExcluded(e.target)) return;
-  if (e.button === 0 && enabled.gilet) { model.IsInflateur = true; setBg($("btnGilet"), COL.Green); }
+  if (e.button === 0 && enabled.gilet) startInflate();
   if (e.button === 2 && enabled.purge) { model.IsPurge = true; setBg($("btnPurge"), COL.Green); }
 });
 function releaseAll(e) {
@@ -523,7 +545,12 @@ function holdButton(id, on, off) {
   btn.addEventListener("pointerleave", off);
   btn.addEventListener("pointercancel", off);
 }
-holdButton("btnGilet", () => { model.IsInflateur = true; setBg($("btnGilet"), COL.Green); },
+// Pénalité : -500 points à chaque front montant de gonflage du gilet pendant la plongée.
+function startInflate() {
+  if (!model.IsInflateur && isPause && !ended) score -= 500;
+  model.IsInflateur = true; setBg($("btnGilet"), COL.Green);
+}
+holdButton("btnGilet", startInflate,
   () => { model.IsInflateur = false; setBg($("btnGilet"), COL.Gray); });
 holdButton("btnPurge", () => { model.IsPurge = true; setBg($("btnPurge"), COL.Green); },
   () => { model.IsPurge = false; setBg($("btnPurge"), COL.Gray); });
